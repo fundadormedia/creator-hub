@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import {
   LineChart,
   Line,
@@ -11,17 +12,10 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { useTheme } from 'next-themes'
-import { ingresosData, brandDeals } from '@/lib/mock-data'
+import { supabase, transformIncomeToChart } from '@/lib/supabase'
+import type { Income, Brand, IncomeChartData } from '@/lib/supabase'
 import { DollarSign } from 'lucide-react'
 import { MetricCard } from '@/components/dashboard/metric-card'
-
-const totalIngresos = ingresosData.reduce(
-  (acc, item) => acc + item.organico + item.sponsor + item.afiliados,
-  0
-)
-
-const lastMonth = ingresosData[ingresosData.length - 1]
-const lastMonthTotal = lastMonth.organico + lastMonth.sponsor + lastMonth.afiliados
 
 const dealStatusStyles: Record<string, string> = {
   activo: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
@@ -39,8 +33,40 @@ export function IncomeView() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
 
+  const [chartData, setChartData] = useState<IncomeChartData[]>([])
+  const [brands, setBrands] = useState<Brand[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    Promise.all([
+      supabase.from('income').select('*'),
+      supabase.from('brands').select('*').order('delivery_date', { ascending: true }),
+    ]).then(([incomeRes, brandsRes]) => {
+      if (incomeRes.data) setChartData(transformIncomeToChart(incomeRes.data as Income[]))
+      if (brandsRes.data) setBrands(brandsRes.data as Brand[])
+      setLoading(false)
+    })
+  }, [])
+
+  const totalIngresos = chartData.reduce(
+    (acc, item) => acc + item.organico + item.sponsor + item.afiliados,
+    0
+  )
+  const lastMonth = chartData[chartData.length - 1]
+  const lastMonthTotal = lastMonth
+    ? lastMonth.organico + lastMonth.sponsor + lastMonth.afiliados
+    : 0
+
   const gridColor = isDark ? '#27272a' : '#e4e4e7'
   const tickColor = isDark ? '#a1a1aa' : '#71717a'
+
+  if (loading) {
+    return (
+      <div className="p-8 flex items-center justify-center h-64">
+        <p className="text-zinc-500 text-sm">Cargando...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="p-8 space-y-8">
@@ -60,12 +86,12 @@ export function IncomeView() {
           icon={DollarSign}
           label="Ingresos este mes"
           value={`$${lastMonthTotal.toLocaleString()}`}
-          subtitle="Ene 2024"
+          subtitle={lastMonth?.mes ?? '—'}
         />
         <MetricCard
           icon={DollarSign}
           label="Promedio mensual"
-          value={`$${Math.round(totalIngresos / ingresosData.length).toLocaleString()}`}
+          value={`$${chartData.length > 0 ? Math.round(totalIngresos / chartData.length).toLocaleString() : 0}`}
           subtitle="últimos 6 meses"
         />
       </div>
@@ -77,7 +103,7 @@ export function IncomeView() {
         </h2>
         <div style={{ height: 280 }}>
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={ingresosData}>
+            <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
               <XAxis
                 dataKey="mes"
@@ -147,19 +173,19 @@ export function IncomeView() {
               </tr>
             </thead>
             <tbody>
-              {brandDeals.map((deal) => (
+              {brands.map((deal) => (
                 <tr key={deal.id} className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/30">
-                  <td className="px-6 py-3 text-zinc-800 dark:text-zinc-200 font-medium">{deal.marca}</td>
+                  <td className="px-6 py-3 text-zinc-800 dark:text-zinc-200 font-medium">{deal.name}</td>
                   <td className="px-6 py-3 text-emerald-600 dark:text-emerald-400 font-semibold">
-                    ${deal.monto.toLocaleString()}
+                    ${deal.amount.toLocaleString()}
                   </td>
                   <td className="px-6 py-3">
-                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${dealStatusStyles[deal.estado]}`}>
-                      {dealStatusLabels[deal.estado]}
+                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${dealStatusStyles[deal.status]}`}>
+                      {dealStatusLabels[deal.status]}
                     </span>
                   </td>
-                  <td className="px-6 py-3 text-zinc-500 dark:text-zinc-400">{deal.fechaEntrega}</td>
-                  <td className="px-6 py-3 text-zinc-500 dark:text-zinc-400">{deal.plataforma}</td>
+                  <td className="px-6 py-3 text-zinc-500 dark:text-zinc-400">{deal.delivery_date}</td>
+                  <td className="px-6 py-3 text-zinc-500 dark:text-zinc-400">{deal.platform}</td>
                 </tr>
               ))}
             </tbody>

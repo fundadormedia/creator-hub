@@ -1,12 +1,12 @@
 import { cn } from '@/lib/utils'
-import type { Estado } from '@/lib/mock-data'
+import type { Status } from '@/lib/supabase'
 
 interface StatusBadgeProps {
-  status: Estado
+  status: Status
   className?: string
 }
 
-const statusConfig: Record<Estado, { label: string; style: string }> = {
+const statusConfig: Record<Status, { label: string; style: string }> = {
   borrador: {
     label: 'Borrador',
     style: 'bg-zinc-700/50 text-zinc-400 border border-zinc-600/30',

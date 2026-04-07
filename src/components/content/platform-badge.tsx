@@ -1,12 +1,12 @@
 import { cn } from '@/lib/utils'
-import type { Plataforma } from '@/lib/mock-data'
+import type { Platform } from '@/lib/supabase'
 
 interface PlatformBadgeProps {
-  platform: Plataforma
+  platform: Platform
   className?: string
 }
 
-const platformStyles: Record<Plataforma, string> = {
+const platformStyles: Record<Platform, string> = {
   YouTube: 'bg-red-500/15 text-red-400 border border-red-500/20',
   Instagram: 'bg-purple-500/15 text-purple-400 border border-purple-500/20',
   TikTok: 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/20',

@@ -1,6 +1,8 @@
 'use client'
 
-import { ideas } from '@/lib/mock-data'
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
+import type { Idea } from '@/lib/supabase'
 import { PlatformBadge } from '@/components/content/platform-badge'
 import { cn } from '@/lib/utils'
 import { Plus, Lightbulb } from 'lucide-react'
@@ -12,6 +14,20 @@ const prioridadStyles: Record<'Alta' | 'Media' | 'Baja', string> = {
 }
 
 export function IdeasView() {
+  const [ideas, setIdeas] = useState<Idea[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    supabase
+      .from('ideas')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        if (data) setIdeas(data as Idea[])
+        setLoading(false)
+      })
+  }, [])
+
   return (
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
@@ -27,39 +43,45 @@ export function IdeasView() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {ideas.map((idea) => (
-          <div
-            key={idea.id}
-            className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
-          >
-            <div className="flex items-start gap-3 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0 mt-0.5">
-                <Lightbulb className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
+      {loading ? (
+        <div className="flex items-center justify-center h-48">
+          <p className="text-zinc-500 text-sm">Cargando...</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {ideas.map((idea) => (
+            <div
+              key={idea.id}
+              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
+            >
+              <div className="flex items-start gap-3 mb-3">
+                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                  <Lightbulb className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
+                </div>
+                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 leading-snug">
+                  {idea.title}
+                </h3>
               </div>
-              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 leading-snug">
-                {idea.titulo}
-              </h3>
-            </div>
 
-            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4 leading-relaxed">
-              {idea.descripcion}
-            </p>
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4 leading-relaxed">
+                {idea.description}
+              </p>
 
-            <div className="flex items-center justify-between">
-              <PlatformBadge platform={idea.plataforma} />
-              <span
-                className={cn(
-                  'text-xs font-medium px-2 py-0.5 rounded-full',
-                  prioridadStyles[idea.prioridad]
-                )}
-              >
-                {idea.prioridad}
-              </span>
+              <div className="flex items-center justify-between">
+                <PlatformBadge platform={idea.platform} />
+                <span
+                  className={cn(
+                    'text-xs font-medium px-2 py-0.5 rounded-full',
+                    prioridadStyles[idea.priority]
+                  )}
+                >
+                  {idea.priority}
+                </span>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

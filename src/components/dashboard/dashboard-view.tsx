@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import {
   BarChart,
   Bar,
@@ -15,7 +16,8 @@ import { CalendarDays, TrendingUp, Clock } from 'lucide-react'
 import { MetricCard } from './metric-card'
 import { PlatformBadge } from '@/components/content/platform-badge'
 import { StatusBadge } from '@/components/content/status-badge'
-import { contenido, ingresosData, metricasMensuales } from '@/lib/mock-data'
+import { supabase, transformIncomeToChart } from '@/lib/supabase'
+import type { Content, Income, IncomeChartData } from '@/lib/supabase'
 import {
   Table,
   TableBody,
@@ -29,7 +31,21 @@ export function DashboardView() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
 
-  const recentContent = contenido.slice(0, 5)
+  const [content, setContent] = useState<Content[]>([])
+  const [chartData, setChartData] = useState<IncomeChartData[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    Promise.all([
+      supabase.from('content').select('*').order('date', { ascending: false }),
+      supabase.from('income').select('*'),
+    ]).then(([contentRes, incomeRes]) => {
+      if (contentRes.data) setContent(contentRes.data as Content[])
+      if (incomeRes.data) setChartData(transformIncomeToChart(incomeRes.data as Income[]))
+      setLoading(false)
+    })
+  }, [])
+
   const now = new Date()
   const dateLabel = now.toLocaleDateString('es-ES', {
     weekday: 'long',
@@ -38,8 +54,34 @@ export function DashboardView() {
     day: 'numeric',
   })
 
+  const currentMonth = now.getMonth() + 1
+  const currentYear = now.getFullYear()
+
+  const publishedThisMonth = content.filter((c) => {
+    const d = new Date(c.date)
+    return c.status === 'publicado' && d.getMonth() + 1 === currentMonth && d.getFullYear() === currentYear
+  }).length
+
+  const sponsorCount = content.filter((c) => c.is_sponsor).length
+  const ratioSponsor = content.length > 0 ? Math.round((sponsorCount / content.length) * 100) : 0
+  const ratioOrganico = 100 - ratioSponsor
+
+  const nextDelivery = content
+    .filter((c) => c.status === 'programado')
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0]
+
+  const recentContent = content.slice(0, 5)
+
   const gridColor = isDark ? '#27272a' : '#e4e4e7'
   const tickColor = isDark ? '#a1a1aa' : '#71717a'
+
+  if (loading) {
+    return (
+      <div className="p-8 flex items-center justify-center h-64">
+        <p className="text-zinc-500 text-sm">Cargando...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="p-8 space-y-8">
@@ -56,21 +98,21 @@ export function DashboardView() {
         <MetricCard
           icon={CalendarDays}
           label="Publicados este mes"
-          value={metricasMensuales.publicadosEsteMes}
+          value={publishedThisMonth}
           subtitle="contenidos publicados"
           trend={12}
         />
         <MetricCard
           icon={TrendingUp}
           label="Ratio Orgánico / Sponsor"
-          value={`${metricasMensuales.ratioOrganico}% / ${metricasMensuales.ratioSponsor}%`}
+          value={`${ratioOrganico}% / ${ratioSponsor}%`}
           subtitle="distribución de contenido"
         />
         <MetricCard
           icon={Clock}
           label="Próxima entrega"
-          value={metricasMensuales.proximaEntrega.titulo}
-          subtitle={`Fecha: ${metricasMensuales.proximaEntrega.fecha}`}
+          value={nextDelivery?.title ?? '—'}
+          subtitle={nextDelivery ? `Fecha: ${nextDelivery.date}` : 'Sin entregas pendientes'}
         />
       </div>
 
@@ -81,7 +123,7 @@ export function DashboardView() {
         </h2>
         <div style={{ height: 280 }}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={ingresosData} barSize={16} barGap={4}>
+            <BarChart data={chartData} barSize={16} barGap={4}>
               <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
               <XAxis
                 dataKey="mes"
@@ -135,16 +177,16 @@ export function DashboardView() {
             {recentContent.map((item) => (
               <TableRow key={item.id} className="border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/40">
                 <TableCell className="text-zinc-800 dark:text-zinc-200 font-medium">
-                  {item.titulo}
+                  {item.title}
                 </TableCell>
                 <TableCell>
-                  <PlatformBadge platform={item.plataforma} />
+                  <PlatformBadge platform={item.platform} />
                 </TableCell>
                 <TableCell>
-                  <StatusBadge status={item.estado} />
+                  <StatusBadge status={item.status} />
                 </TableCell>
                 <TableCell className="text-zinc-500 dark:text-zinc-400 text-sm">
-                  {item.fecha}
+                  {item.date}
                 </TableCell>
               </TableRow>
             ))}

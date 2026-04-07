@@ -54,10 +54,11 @@ interface ContentModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   item?: Content | null
+  initialDate?: string
   onSaved: (item: Content) => void
 }
 
-export function ContentModal({ open, onOpenChange, item, onSaved }: ContentModalProps) {
+export function ContentModal({ open, onOpenChange, item, initialDate, onSaved }: ContentModalProps) {
   const [form, setForm] = useState<ContentForm>(defaultForm)
   const [saving, setSaving] = useState(false)
 
@@ -76,10 +77,10 @@ export function ContentModal({ open, onOpenChange, item, onSaved }: ContentModal
               likes: item.likes,
               is_sponsor: item.is_sponsor,
             }
-          : defaultForm()
+          : { ...defaultForm(), ...(initialDate ? { date: initialDate } : {}) }
       )
     }
-  }, [open, item])
+  }, [open, item, initialDate])
 
   const set = <K extends keyof ContentForm>(k: K, v: ContentForm[K]) =>
     setForm((p) => ({ ...p, [k]: v }))

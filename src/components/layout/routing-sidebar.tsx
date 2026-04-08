@@ -10,6 +10,7 @@ import {
   Link2,
   FileUser,
   User,
+  Music2,
   Zap,
   ChevronLeft,
   ChevronRight,
@@ -42,7 +43,8 @@ const navItems: NavItem[] = [
   { id: 'perfil',     label: 'Perfil',      icon: User,            href: '/perfil' },
   { id: 'contenido',  label: 'Contenido',   icon: FileVideo,       href: '/', spaSection: 'contenido' },
   { id: 'calendario', label: 'Calendario',  icon: Calendar,        href: '/', spaSection: 'calendario' },
-  { id: 'ideas',      label: 'Ideas',       icon: Lightbulb,       href: '/', spaSection: 'ideas' },
+  { id: 'ideas',       label: 'Ideas',        icon: Lightbulb, href: '/', spaSection: 'ideas' },
+  { id: 'tiktok-shop', label: 'TikTok Shop', icon: Music2,    href: '/tiktok-shop' },
   { id: 'ingresos',   label: 'Ingresos',    icon: DollarSign,      href: '/', spaSection: 'ingresos' },
   { id: 'marcas',     label: 'Marcas',      icon: Briefcase,       href: '/', spaSection: 'marcas' },
   { id: 'mediakit',   label: 'Media Kit',   icon: FileUser,        href: '/mediakit' },
@@ -76,6 +78,7 @@ export function RoutingSidebar({ isCollapsed, onToggleCollapse }: RoutingSidebar
   function isActive(item: NavItem): boolean {
     if (item.href === '/mediakit') return pathname.startsWith('/mediakit')
     if (item.href === '/perfil') return pathname.startsWith('/perfil')
+    if (item.href === '/tiktok-shop') return pathname.startsWith('/tiktok-shop')
     return false
   }
 

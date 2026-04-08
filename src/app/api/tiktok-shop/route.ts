@@ -1,8 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-
 type Action = 'crear-script' | 'policy-checker' | 'extraer-video'
 
 interface CreateScriptPayload {
@@ -112,6 +110,18 @@ Responde en ${p.language === 'English' ? 'English' : 'español'}.`
 }
 
 export async function POST(request: NextRequest) {
+  console.log('API KEY existe:', !!process.env.ANTHROPIC_API_KEY)
+
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) {
+    return NextResponse.json(
+      { error: 'ANTHROPIC_API_KEY no está configurada en las variables de entorno.' },
+      { status: 500 }
+    )
+  }
+
+  const client = new Anthropic({ apiKey })
+
   try {
     const body = (await request.json()) as Payload
 

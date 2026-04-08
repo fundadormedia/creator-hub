@@ -27,10 +27,12 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
+  const authPages = ['/login', '/register', '/forgot-password', '/reset-password']
+
   // Public routes — no auth needed
-  if (pathname.startsWith('/public/') || pathname === '/login' || pathname === '/register') {
-    // Redirect logged-in users away from auth pages
-    if (user && (pathname === '/login' || pathname === '/register')) {
+  if (pathname.startsWith('/public/') || authPages.includes(pathname)) {
+    // Redirect logged-in users away from auth pages (except reset-password — needs session to call updateUser)
+    if (user && (pathname === '/login' || pathname === '/register' || pathname === '/forgot-password')) {
       return NextResponse.redirect(new URL('/', request.url))
     }
     return supabaseResponse

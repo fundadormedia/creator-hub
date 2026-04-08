@@ -27,10 +27,15 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  const authPages = ['/login', '/register', '/forgot-password', '/reset-password']
+  const authPages = ['/login', '/register', '/forgot-password']
 
   // Public routes — no auth needed
-  if (pathname.startsWith('/public/') || pathname.startsWith('/auth/') || authPages.includes(pathname)) {
+  if (
+    pathname.startsWith('/public/') ||
+    pathname.startsWith('/auth/') ||
+    pathname === '/reset-password' ||
+    authPages.includes(pathname)
+  ) {
     // Redirect logged-in users away from auth pages (except reset-password — needs session to call updateUser)
     if (user && (pathname === '/login' || pathname === '/register' || pathname === '/forgot-password')) {
       return NextResponse.redirect(new URL('/', request.url))

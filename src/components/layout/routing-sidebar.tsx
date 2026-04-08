@@ -9,6 +9,7 @@ import {
   Briefcase,
   Link2,
   FileUser,
+  User,
   Zap,
   ChevronLeft,
   ChevronRight,
@@ -38,6 +39,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: 'dashboard',  label: 'Dashboard',   icon: LayoutDashboard, href: '/', spaSection: 'dashboard' },
+  { id: 'perfil',     label: 'Perfil',      icon: User,            href: '/perfil' },
   { id: 'contenido',  label: 'Contenido',   icon: FileVideo,       href: '/', spaSection: 'contenido' },
   { id: 'calendario', label: 'Calendario',  icon: Calendar,        href: '/', spaSection: 'calendario' },
   { id: 'ideas',      label: 'Ideas',       icon: Lightbulb,       href: '/', spaSection: 'ideas' },
@@ -73,6 +75,7 @@ export function RoutingSidebar({ isCollapsed, onToggleCollapse }: RoutingSidebar
 
   function isActive(item: NavItem): boolean {
     if (item.href === '/mediakit') return pathname.startsWith('/mediakit')
+    if (item.href === '/perfil') return pathname.startsWith('/perfil')
     return false
   }
 

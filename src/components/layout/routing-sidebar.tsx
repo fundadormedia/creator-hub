@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Sun,
   Moon,
+  LogOut,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -21,6 +22,8 @@ import { useTheme } from 'next-themes'
 import { useState, useEffect } from 'react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
+import { supabase } from '@/lib/supabase'
+import { useUser } from '@/hooks/use-user'
 
 // ─── Nav items ────────────────────────────────────────────────────────────────
 
@@ -58,7 +61,13 @@ export function RoutingSidebar({ isCollapsed, onToggleCollapse }: RoutingSidebar
   const router = useRouter()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const { displayName, initials, email } = useUser()
   useEffect(() => setMounted(true), [])
+
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
 
   const isDark = theme === 'dark'
 
@@ -180,20 +189,36 @@ export function RoutingSidebar({ isCollapsed, onToggleCollapse }: RoutingSidebar
       {/* User profile */}
       <div className={cn('border-t border-zinc-200 dark:border-zinc-800 shrink-0', isCollapsed ? 'p-2' : 'p-4')}>
         {isCollapsed ? (
-          <div className="flex justify-center py-1">
+          <div className="flex flex-col items-center gap-1 py-1">
             <Avatar className="w-8 h-8">
-              <AvatarFallback className="bg-indigo-500 text-white text-xs font-bold">CR</AvatarFallback>
+              <AvatarFallback className="bg-indigo-500 text-white text-xs font-bold">{initials}</AvatarFallback>
             </Avatar>
+            <button
+              onClick={handleLogout}
+              title="Cerrar sesión"
+              className="p-1.5 rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
           </div>
         ) : (
-          <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/60 cursor-pointer transition-colors">
-            <Avatar className="w-8 h-8">
-              <AvatarFallback className="bg-indigo-500 text-white text-xs font-bold">CR</AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">Creator Pro</p>
-              <p className="text-xs text-zinc-500 truncate">creator@hub.com</p>
+          <div className="space-y-1">
+            <div className="flex items-center gap-3 px-3 py-2 rounded-lg">
+              <Avatar className="w-8 h-8 shrink-0">
+                <AvatarFallback className="bg-indigo-500 text-white text-xs font-bold">{initials}</AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">{displayName}</p>
+                <p className="text-xs text-zinc-500 truncate">{email}</p>
+              </div>
             </div>
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-zinc-500 dark:text-zinc-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-500/10 transition-colors"
+            >
+              <LogOut className="w-4 h-4 shrink-0" />
+              <span className="whitespace-nowrap">Cerrar sesión</span>
+            </button>
           </div>
         )}
       </div>

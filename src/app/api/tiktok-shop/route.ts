@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
     }
 
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-5',
       max_tokens: 1500,
       messages: [{ role: 'user', content: prompt }],
     })
@@ -155,10 +155,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ result: text })
   } catch (error) {
-    console.error('TikTok Shop API error:', error)
-    return NextResponse.json(
-      { error: 'Error al procesar la solicitud. Verifica tu API key de Anthropic.' },
-      { status: 500 }
-    )
+    const message = error instanceof Error ? error.message : String(error)
+    console.error('TikTok Shop API error:', message)
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

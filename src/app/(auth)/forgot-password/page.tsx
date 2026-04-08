@@ -20,7 +20,7 @@ export default function ForgotPasswordPage() {
     setLoading(true)
 
     const { error: authError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `https://creator-hub-vert-psi.vercel.app/reset-password`,
+      redirectTo: `${window.location.origin}/reset-password`,
     })
 
     if (authError) {

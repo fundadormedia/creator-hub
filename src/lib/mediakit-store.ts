@@ -41,6 +41,14 @@ export interface TwitterMetrics {
   impresionesMensuales: number
 }
 
+export interface PortfolioItem {
+  id: string
+  titulo: string
+  plataforma: string
+  url: string
+  descripcion?: string
+}
+
 export interface MediaKit {
   id: string
   name: string
@@ -54,6 +62,7 @@ export interface MediaKit {
     tiktok: TiktokMetrics
     twitter: TwitterMetrics
   }
+  portfolio: PortfolioItem[]
 }
 
 // ─── Default values ───────────────────────────────────────────────────────────
@@ -103,6 +112,7 @@ function buildDefaultKit(id: string, name: string, description: string): MediaKi
         impresionesMensuales: 380000,
       },
     },
+    portfolio: [],
   }
 }
 

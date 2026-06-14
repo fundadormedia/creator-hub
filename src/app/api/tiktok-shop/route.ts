@@ -26,38 +26,38 @@ interface ExtraerVideoPayload {
 
 type Payload = CreateScriptPayload | PolicyCheckerPayload | ExtraerVideoPayload
 
-function buildCreateScriptPrompt(p: CreateScriptPayload): string {
-  return `Eres un experto en TikTok Shop y marketing de contenido viral en español latino.
-Crea un script viral para TikTok Shop con la siguiente información:
+function buildCreateScriptPrompt(p: CreateScriptPayload & { platform?: string }): string {
+  const plat = p.platform || 'redes sociales'
+  return `Eres un experto en contenido UGC (User Generated Content) y storytelling para creadores digitales.
+Crea un script de video UGC con el siguiente brief:
 
-Producto: ${p.product}
-Audiencia objetivo: ${p.audience}
-Precio / Comisión: ${p.price}
+Producto / Servicio: ${p.product}
+Audiencia objetivo: ${p.audience || 'audiencia general'}
+Plataforma: ${plat}
 Estilo del video: ${p.style}
 Experiencia personal / Contexto: ${p.context || 'Sin contexto adicional'}
 
 INSTRUCCIONES:
 - El script debe estar en español latino natural y conversacional
-- Estructura obligatoria: Hook (primeros 3 segundos), Desarrollo, Call to Action con urgencia
-- El hook debe ser irresistible y detener el scroll
-- Incluye momentos de pausa dramática [PAUSA] donde sea efectivo
-- Agrega indicaciones de tono entre corchetes: [EMOCIONADO], [SUSURRANDO], [DIRECTO A CÁMARA], etc.
+- Estructura obligatoria: Hook (primeros 3 segundos que paren el scroll), Desarrollo con storytelling, Call to Action claro
+- El hook debe conectar con una emoción o dolor real de la audiencia
+- Incluye indicaciones de tono entre corchetes: [EMOCIONADO], [SUSURRANDO], [DIRECTO A CÁMARA], [PAUSA], etc.
 - Duración objetivo: 30-60 segundos (aproximadamente 150-250 palabras habladas)
-- El CTA debe incluir el precio/comisión y urgencia (stock limitado, por tiempo limitado, etc.)
-- Usa lenguaje coloquial, emojis en puntos clave y frases que generen FOMO
+- El storytelling debe ser auténtico, no publicitario — como si fuera un amigo recomendando algo
+- Usa lenguaje coloquial y frases que generen conexión emocional
 
 Formato de respuesta:
 🎬 **HOOK (0-3 seg)**
 [texto del hook]
 
-📱 **DESARROLLO (4-45 seg)**
-[desarrollo del script]
+📖 **STORYTELLING (4-45 seg)**
+[desarrollo del script con la historia]
 
-🛒 **CALL TO ACTION (últimos 10 seg)**
-[CTA con precio y urgencia]
+✅ **CALL TO ACTION (últimos 10 seg)**
+[CTA claro y natural]
 
 💡 **TIPS DE PRODUCCIÓN**
-[3 tips específicos para filmar este video]`
+[3 tips específicos para filmar este video en ${plat}]`
 }
 
 function buildPolicyCheckerPrompt(p: PolicyCheckerPayload): string {

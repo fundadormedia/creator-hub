@@ -23,9 +23,14 @@ import {
   Hash,
   Music2,
   Briefcase,
+  Link2,
+  Plus,
+  Trash2,
 } from 'lucide-react'
+import { useState } from 'react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { brandDeals } from '@/lib/mock-data'
+import type { PortfolioItem } from '@/lib/mediakit-store'
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
 
@@ -191,6 +196,149 @@ function platformColor(plataforma: string) {
     'Twitter / X': 'bg-indigo-500/15 text-indigo-500 border-indigo-500/30',
   }
   return map[plataforma] ?? 'bg-zinc-500/15 text-zinc-500 border-zinc-500/30'
+}
+
+// ─── Portfolio Section ────────────────────────────────────────────────────────
+
+const PORTFOLIO_PLATFORMS = ['TikTok', 'Instagram', 'YouTube', 'Facebook', 'Twitter / X', 'Otro']
+
+const INPUT_SM =
+  'w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-colors'
+
+function PortfolioSection() {
+  const [items, setItems] = useState<PortfolioItem[]>([])
+  const [adding, setAdding] = useState(false)
+  const [titulo, setTitulo] = useState('')
+  const [plataforma, setPlataforma] = useState('')
+  const [url, setUrl] = useState('')
+  const [descripcion, setDescripcion] = useState('')
+
+  function handleAdd() {
+    if (!titulo.trim() || !url.trim()) return
+    const item: PortfolioItem = {
+      id: `p-${Date.now()}`,
+      titulo: titulo.trim(),
+      plataforma: plataforma || 'Otro',
+      url: url.trim(),
+      descripcion: descripcion.trim() || undefined,
+    }
+    setItems((prev) => [...prev, item])
+    setTitulo('')
+    setPlataforma('')
+    setUrl('')
+    setDescripcion('')
+    setAdding(false)
+  }
+
+  function handleDelete(id: string) {
+    setItems((prev) => prev.filter((i) => i.id !== id))
+  }
+
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+          Portfolio de videos
+        </h2>
+        <button
+          onClick={() => setAdding(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-500 hover:bg-indigo-600 text-white transition-colors"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Agregar video
+        </button>
+      </div>
+
+      {adding && (
+        <div className="bg-white dark:bg-zinc-900 border border-indigo-500/30 rounded-xl p-5 mb-4 space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Título del video *</label>
+              <input className={INPUT_SM} value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ej: Cómo empecé mi negocio con $0" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Plataforma</label>
+              <select className={INPUT_SM} value={plataforma} onChange={(e) => setPlataforma(e.target.value)}>
+                <option value="">Selecciona...</option>
+                {PORTFOLIO_PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Link del video *</label>
+            <input className={INPUT_SM} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://..." />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">Descripción breve (opcional)</label>
+            <input className={INPUT_SM} value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="Ej: UGC para marca de skincare, 200K vistas" />
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleAdd}
+              disabled={!titulo.trim() || !url.trim()}
+              className="px-4 py-2 text-xs font-medium bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white rounded-lg transition-colors"
+            >
+              Agregar
+            </button>
+            <button
+              onClick={() => setAdding(false)}
+              className="px-4 py-2 text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {items.length === 0 && !adding ? (
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 border-dashed rounded-xl p-8 text-center">
+          <Link2 className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mx-auto mb-2" />
+          <p className="text-sm text-zinc-400 dark:text-zinc-500">Agrega links a tus mejores videos para mostrar tu trabajo</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {items.map((item) => (
+            <div
+              key={item.id}
+              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 flex items-start gap-3 group"
+            >
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                <FileVideo className="w-4 h-4 text-indigo-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200 truncate">{item.titulo}</p>
+                {item.descripcion && (
+                  <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5 line-clamp-1">{item.descripcion}</p>
+                )}
+                <div className="flex items-center gap-2 mt-2">
+                  {item.plataforma && (
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">
+                      {item.plataforma}
+                    </span>
+                  )}
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-[10px] text-indigo-500 hover:text-indigo-400 transition-colors"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    Ver video
+                  </a>
+                </div>
+              </div>
+              <button
+                onClick={() => handleDelete(item.id)}
+                className="opacity-0 group-hover:opacity-100 p-1 text-zinc-400 hover:text-red-500 transition-all"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  )
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -477,6 +625,9 @@ export function MediaKitView() {
           </div>
         </div>
       </section>
+
+      {/* ── Portfolio de videos ──────────────────────────────────────────────── */}
+      <PortfolioSection />
 
       {/* ── Footer ──────────────────────────────────────────────────────────── */}
       <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">

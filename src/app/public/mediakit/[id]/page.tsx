@@ -13,6 +13,7 @@ import {
   MapPin,
   Zap,
   ExternalLink,
+  FileVideo,
 } from 'lucide-react'
 import {
   type MediaKit,
@@ -255,6 +256,44 @@ export default function PublicMediaKitPage({ params }: { params: Promise<{ id: s
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {enabledPlatforms.map((p) => (
                 <PlatformCard key={p} platformKey={p} kit={kit} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ── Portfolio ───────────────────────────────────────────────────── */}
+        {kit.portfolio && kit.portfolio.length > 0 && (
+          <section>
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-5">
+              Portfolio de videos
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {kit.portfolio.map((item) => (
+                <a
+                  key={item.id}
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl hover:border-indigo-500/40 hover:shadow-sm transition-all group"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center shrink-0">
+                    <FileVideo className="w-5 h-5 text-indigo-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200 truncate group-hover:text-indigo-500 transition-colors">
+                      {item.titulo}
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {item.plataforma && (
+                        <span className="text-[10px] font-medium text-zinc-400">{item.plataforma}</span>
+                      )}
+                      {item.descripcion && (
+                        <span className="text-[10px] text-zinc-400 truncate">· {item.descripcion}</span>
+                      )}
+                    </div>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-zinc-300 group-hover:text-indigo-400 transition-colors shrink-0" />
+                </a>
               ))}
             </div>
           </section>

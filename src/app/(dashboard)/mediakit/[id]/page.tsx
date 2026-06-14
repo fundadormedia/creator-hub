@@ -11,6 +11,10 @@ import {
   Music2,
   Hash,
   Check,
+  Plus,
+  Trash2,
+  Link2,
+  FileVideo,
 } from 'lucide-react'
 import {
   type MediaKit,
@@ -18,6 +22,7 @@ import {
   type InstagramMetrics,
   type TiktokMetrics,
   type TwitterMetrics,
+  type PortfolioItem,
   getMediaKit,
   updateMediaKit,
 } from '@/lib/mediakit-store'
@@ -205,6 +210,14 @@ export default function MediaKitEditPage({ params }: { params: Promise<{ id: str
     seguidores: 0, impresionesMensuales: 0,
   })
 
+  // Portfolio
+  const [portfolio, setPortfolio] = useState<PortfolioItem[]>([])
+  const [addingItem, setAddingItem] = useState(false)
+  const [newTitulo, setNewTitulo] = useState('')
+  const [newPlataforma, setNewPlataforma] = useState('')
+  const [newUrl, setNewUrl] = useState('')
+  const [newDesc, setNewDesc] = useState('')
+
   const load = useCallback(() => {
     const k = getMediaKit(id)
     if (!k) { setNotFound(true); return }
@@ -225,6 +238,7 @@ export default function MediaKitEditPage({ params }: { params: Promise<{ id: str
     setTt({ seguidores: k.platforms.tiktok.seguidores, viewsPromedio: k.platforms.tiktok.viewsPromedio, likesTotales: k.platforms.tiktok.likesTotales, engagementRate: k.platforms.tiktok.engagementRate })
     setTwEnabled(k.platforms.twitter.enabled)
     setTw({ seguidores: k.platforms.twitter.seguidores, impresionesMensuales: k.platforms.twitter.impresionesMensuales })
+    setPortfolio(k.portfolio ?? [])
   }, [id])
 
   useEffect(load, [load])
@@ -240,6 +254,7 @@ export default function MediaKitEditPage({ params }: { params: Promise<{ id: str
         tiktok:   { enabled: ttEnabled, ...tt },
         twitter:  { enabled: twEnabled, ...tw },
       },
+      portfolio,
     })
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
@@ -295,9 +310,10 @@ export default function MediaKitEditPage({ params }: { params: Promise<{ id: str
 
         {/* Tabs */}
         <Tabs defaultValue="perfil">
-          <TabsList className="bg-zinc-100 dark:bg-zinc-800 p-1 rounded-lg w-full grid grid-cols-2">
+          <TabsList className="bg-zinc-100 dark:bg-zinc-800 p-1 rounded-lg w-full grid grid-cols-3">
             <TabsTrigger value="perfil" className="rounded-md text-sm">Perfil general</TabsTrigger>
             <TabsTrigger value="plataformas" className="rounded-md text-sm">Plataformas</TabsTrigger>
+            <TabsTrigger value="portfolio" className="rounded-md text-sm">Portfolio</TabsTrigger>
           </TabsList>
 
           {/* ── Perfil ────────────────────────────────────────────────────── */}
@@ -434,6 +450,92 @@ export default function MediaKitEditPage({ params }: { params: Promise<{ id: str
             </PlatformSection>
 
           </TabsContent>
+
+          {/* ── Portfolio ─────────────────────────────────────────────────── */}
+          <TabsContent value="portfolio" className="mt-5 space-y-4">
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Videos y trabajos anteriores</h2>
+                <button
+                  onClick={() => setAddingItem(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Agregar video
+                </button>
+              </div>
+
+              {addingItem && (
+                <div className="border border-indigo-500/30 rounded-xl p-4 space-y-3 bg-indigo-500/5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Field label="Título del video *">
+                      <input className={inputCls} value={newTitulo} onChange={(e) => setNewTitulo(e.target.value)} placeholder="Ej: UGC para marca de skincare" />
+                    </Field>
+                    <Field label="Plataforma">
+                      <select className={inputCls} value={newPlataforma} onChange={(e) => setNewPlataforma(e.target.value)}>
+                        <option value="">Selecciona...</option>
+                        {['TikTok', 'Instagram', 'YouTube', 'Facebook', 'Twitter / X', 'Otro'].map((p) => (
+                          <option key={p} value={p}>{p}</option>
+                        ))}
+                      </select>
+                    </Field>
+                  </div>
+                  <Field label="Link del video *">
+                    <input className={inputCls} value={newUrl} onChange={(e) => setNewUrl(e.target.value)} placeholder="https://..." />
+                  </Field>
+                  <Field label="Descripción breve (opcional)">
+                    <input className={inputCls} value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="Ej: 200K vistas, UGC orgánico para marca X" />
+                  </Field>
+                  <div className="flex gap-2">
+                    <button
+                      disabled={!newTitulo.trim() || !newUrl.trim()}
+                      onClick={() => {
+                        setPortfolio((prev) => [...prev, { id: `p-${Date.now()}`, titulo: newTitulo.trim(), plataforma: newPlataforma || 'Otro', url: newUrl.trim(), descripcion: newDesc.trim() || undefined }])
+                        setNewTitulo(''); setNewPlataforma(''); setNewUrl(''); setNewDesc(''); setAddingItem(false)
+                      }}
+                      className="px-4 py-2 text-xs font-medium bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white rounded-lg transition-colors"
+                    >
+                      Agregar
+                    </button>
+                    <button onClick={() => setAddingItem(false)} className="px-4 py-2 text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {portfolio.length === 0 && !addingItem ? (
+                <div className="border border-dashed border-zinc-200 dark:border-zinc-700 rounded-xl p-8 text-center">
+                  <Link2 className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mx-auto mb-2" />
+                  <p className="text-sm text-zinc-400 dark:text-zinc-500">Agrega links a tus mejores videos para mostrar tu trabajo a las marcas</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {portfolio.map((item) => (
+                    <div key={item.id} className="flex items-center gap-3 p-3 rounded-lg border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 group">
+                      <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0">
+                        <FileVideo className="w-4 h-4 text-indigo-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200 truncate">{item.titulo}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {item.plataforma && <span className="text-[10px] text-zinc-400">{item.plataforma}</span>}
+                          {item.descripcion && <span className="text-[10px] text-zinc-400 truncate">· {item.descripcion}</span>}
+                        </div>
+                      </div>
+                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:text-indigo-400 shrink-0">
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                      <button onClick={() => setPortfolio((prev) => prev.filter((i) => i.id !== item.id))} className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-500 transition-all shrink-0">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
         </Tabs>
 
         {/* Bottom save bar */}

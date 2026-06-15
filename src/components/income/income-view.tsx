@@ -77,7 +77,7 @@ const defaultIncomeForm = (): IncomeForm => ({
   source: 'organic',
 })
 
-export function IncomeView() {
+export function IncomeView({ embedded = false }: { embedded?: boolean } = {}) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
 
@@ -179,32 +179,36 @@ export function IncomeView() {
   }
 
   return (
-    <div className="p-8 space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Ingresos</h1>
-        <p className="text-sm text-zinc-500 mt-1">Seguimiento de tu monetización</p>
-      </div>
+    <div className={embedded ? 'space-y-8' : 'p-8 space-y-8'}>
+      {!embedded && (
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Ingresos</h1>
+          <p className="text-sm text-zinc-500 mt-1">Seguimiento de tu monetización</p>
+        </div>
+      )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <MetricCard
-          icon={DollarSign}
-          label="Total acumulado"
-          value={`$${totalIngresos.toLocaleString()}`}
-          trend={8}
-        />
-        <MetricCard
-          icon={DollarSign}
-          label="Ingresos este mes"
-          value={`$${lastMonthTotal.toLocaleString()}`}
-          subtitle={lastMonth?.mes ?? '—'}
-        />
-        <MetricCard
-          icon={DollarSign}
-          label="Promedio mensual"
-          value={`$${chartData.length > 0 ? Math.round(totalIngresos / chartData.length).toLocaleString() : 0}`}
-          subtitle="por mes"
-        />
-      </div>
+      {!embedded && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <MetricCard
+            icon={DollarSign}
+            label="Total acumulado"
+            value={`$${totalIngresos.toLocaleString()}`}
+            trend={8}
+          />
+          <MetricCard
+            icon={DollarSign}
+            label="Ingresos este mes"
+            value={`$${lastMonthTotal.toLocaleString()}`}
+            subtitle={lastMonth?.mes ?? '—'}
+          />
+          <MetricCard
+            icon={DollarSign}
+            label="Promedio mensual"
+            value={`$${chartData.length > 0 ? Math.round(totalIngresos / chartData.length).toLocaleString() : 0}`}
+            subtitle="por mes"
+          />
+        </div>
+      )}
 
       {/* Line Chart */}
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">

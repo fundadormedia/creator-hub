@@ -14,6 +14,8 @@ import {
   DialogClose,
 } from '@/components/ui/dialog'
 import { MetricCard } from '@/components/dashboard/metric-card'
+import { IncomeView } from '@/components/income/income-view'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   TrendingDown,
   TrendingUp,
@@ -214,20 +216,11 @@ export function FinancesView() {
 
   return (
     <div className="p-8 space-y-8">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Finanzas</h1>
-          <p className="text-sm text-zinc-500 mt-1">
-            Gastos, presupuesto y ganancia neta · {CURRENT_MONTH} {CURRENT_YEAR}
-          </p>
-        </div>
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium rounded-lg transition-colors shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          Agregar gasto
-        </button>
+      <div>
+        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Finanzas</h1>
+        <p className="text-sm text-zinc-500 mt-1">
+          Ingresos, gastos, presupuesto y ganancia neta · {CURRENT_MONTH} {CURRENT_YEAR}
+        </p>
       </div>
 
       {/* ── Resumen del mes ──────────────────────────────────────────────── */}
@@ -243,6 +236,26 @@ export function FinancesView() {
             {neto < 0 ? '-' : ''}${Math.abs(neto).toLocaleString()}
           </p>
         </div>
+      </div>
+
+      {/* ── Pestañas: Gastos | Ingresos ──────────────────────────────────── */}
+      <Tabs defaultValue="gastos">
+        <TabsList className="bg-zinc-100 dark:bg-zinc-800 p-1 rounded-lg grid grid-cols-2 w-full max-w-xs">
+          <TabsTrigger value="gastos" className="rounded-md text-sm">Gastos</TabsTrigger>
+          <TabsTrigger value="ingresos" className="rounded-md text-sm">Ingresos</TabsTrigger>
+        </TabsList>
+
+        {/* ── Tab Gastos ─────────────────────────────────────────────────── */}
+        <TabsContent value="gastos" className="mt-6 space-y-8">
+
+      <div className="flex justify-end">
+        <button
+          onClick={openCreate}
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium rounded-lg transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Agregar gasto
+        </button>
       </div>
 
       {/* ── Presupuestos ─────────────────────────────────────────────────── */}
@@ -330,6 +343,14 @@ export function FinancesView() {
           </div>
         )}
       </div>
+
+        </TabsContent>
+
+        {/* ── Tab Ingresos ───────────────────────────────────────────────── */}
+        <TabsContent value="ingresos" className="mt-6">
+          <IncomeView embedded />
+        </TabsContent>
+      </Tabs>
 
       {/* ── Modal: gasto ─────────────────────────────────────────────────── */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>

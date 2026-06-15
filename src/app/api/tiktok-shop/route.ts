@@ -1,5 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextResponse, type NextRequest } from 'next/server'
+import { createRouteClient } from '@/lib/supabase-route'
+
+// Máximo de scripts que un usuario puede generar por día
+const DAILY_SCRIPT_LIMIT = 3
 
 type Action = 'crear-script' | 'policy-checker' | 'extraer-video'
 
@@ -132,9 +136,38 @@ export async function POST(request: NextRequest) {
     let prompt: string
 
     switch (body.action as Action) {
-      case 'crear-script':
+      case 'crear-script': {
+        // ── Rate limit: máximo DAILY_SCRIPT_LIMIT scripts por usuario por día ──
+        const supabase = await createRouteClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+          return NextResponse.json({ error: 'Debes iniciar sesión para generar scripts.' }, { status: 401 })
+        }
+
+        const startOfDay = new Date()
+        startOfDay.setHours(0, 0, 0, 0)
+
+        const { count, error: countError } = await supabase
+          .from('script_usage')
+          .select('id', { count: 'exact', head: true })
+          .gte('created_at', startOfDay.toISOString())
+
+        if (countError) {
+          console.error('Error contando uso:', countError.message)
+        } else if ((count ?? 0) >= DAILY_SCRIPT_LIMIT) {
+          return NextResponse.json(
+            { error: `Llegaste al límite de ${DAILY_SCRIPT_LIMIT} scripts por día. Vuelve mañana para generar más. 🙌` },
+            { status: 429 }
+          )
+        }
+
+        // Registrar esta generación
+        await supabase.from('script_usage').insert({ user_id: user.id })
+
         prompt = buildCreateScriptPrompt(body as CreateScriptPayload)
         break
+      }
       case 'policy-checker':
         prompt = buildPolicyCheckerPrompt(body as PolicyCheckerPayload)
         break

@@ -9,6 +9,8 @@ import {
   Briefcase,
   Link2,
   FileUser,
+  Clapperboard,
+  User,
   Zap,
   ChevronLeft,
   ChevronRight,
@@ -116,7 +118,20 @@ export function Sidebar({
           )
         })}
 
-        {/* Media Kit — navigates to /mediakit route */}
+        {/* Routed pages (no son secciones SPA) */}
+        <button
+          onClick={() => router.push('/tiktok-shop')}
+          title={isCollapsed ? 'Script UGC' : undefined}
+          className={cn(
+            'w-full flex items-center rounded-lg text-sm font-medium transition-all duration-150',
+            isCollapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2.5',
+            'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
+          )}
+        >
+          <Clapperboard className="w-4 h-4 shrink-0 text-zinc-500 dark:text-zinc-500" />
+          {!isCollapsed && <span className="whitespace-nowrap">Script UGC</span>}
+        </button>
+
         <button
           onClick={() => router.push('/mediakit')}
           title={isCollapsed ? 'Media Kit' : undefined}
@@ -128,6 +143,19 @@ export function Sidebar({
         >
           <FileUser className="w-4 h-4 shrink-0 text-zinc-500 dark:text-zinc-500" />
           {!isCollapsed && <span className="whitespace-nowrap">Media Kit</span>}
+        </button>
+
+        <button
+          onClick={() => router.push('/perfil')}
+          title={isCollapsed ? 'Perfil' : undefined}
+          className={cn(
+            'w-full flex items-center rounded-lg text-sm font-medium transition-all duration-150',
+            isCollapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2.5',
+            'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
+          )}
+        >
+          <User className="w-4 h-4 shrink-0 text-zinc-500 dark:text-zinc-500" />
+          {!isCollapsed && <span className="whitespace-nowrap">Perfil</span>}
         </button>
       </nav>
 

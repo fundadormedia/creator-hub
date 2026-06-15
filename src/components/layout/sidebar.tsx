@@ -6,6 +6,7 @@ import {
   Calendar,
   Lightbulb,
   DollarSign,
+  Wallet,
   Briefcase,
   Link2,
   FileUser,
@@ -27,6 +28,7 @@ export type Section =
   | 'calendario'
   | 'ideas'
   | 'ingresos'
+  | 'finanzas'
   | 'marcas'
   | 'afiliados'
 
@@ -42,6 +44,7 @@ const navItems: NavItem[] = [
   { id: 'calendario', label: 'Calendario', icon: Calendar },
   { id: 'ideas',      label: 'Ideas',      icon: Lightbulb },
   { id: 'ingresos',   label: 'Ingresos',   icon: DollarSign },
+  { id: 'finanzas',   label: 'Finanzas',   icon: Wallet },
   { id: 'marcas',     label: 'Marcas',     icon: Briefcase },
   { id: 'afiliados',  label: 'Afiliados',  icon: Link2 },
 ]

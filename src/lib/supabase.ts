@@ -65,6 +65,49 @@ export interface IncomeChartData {
   afiliados: number
 }
 
+export type ExpenseCategory =
+  | 'software'
+  | 'equipo'
+  | 'publicidad'
+  | 'edicion'
+  | 'suscripciones'
+  | 'otros'
+
+export interface Expense {
+  id: string
+  category: ExpenseCategory
+  amount: number
+  month: string
+  year: number
+  description: string | null
+  created_at: string
+}
+
+export interface Budget {
+  id: string
+  category: ExpenseCategory
+  monthly_limit: number
+  created_at: string
+}
+
+export const EXPENSE_CATEGORIES: { value: ExpenseCategory; label: string }[] = [
+  { value: 'software',      label: 'Software / Herramientas' },
+  { value: 'equipo',        label: 'Equipo (cámara, luces…)' },
+  { value: 'publicidad',    label: 'Publicidad / Ads' },
+  { value: 'edicion',       label: 'Edición / Freelancers' },
+  { value: 'suscripciones', label: 'Suscripciones' },
+  { value: 'otros',         label: 'Otros' },
+]
+
+export const EXPENSE_CATEGORY_LABELS: Record<ExpenseCategory, string> = {
+  software:      'Software / Herramientas',
+  equipo:        'Equipo',
+  publicidad:    'Publicidad / Ads',
+  edicion:       'Edición / Freelancers',
+  suscripciones: 'Suscripciones',
+  otros:         'Otros',
+}
+
 const MONTH_ORDER: Record<string, number> = {
   Ene: 1, Feb: 2, Mar: 3, Abr: 4, May: 5, Jun: 6,
   Jul: 7, Ago: 8, Sep: 9, Oct: 10, Nov: 11, Dic: 12,

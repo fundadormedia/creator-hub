@@ -7,6 +7,7 @@ import { ContentView } from '@/components/content/content-view'
 import { CalendarView } from '@/components/calendar/calendar-view'
 import { IdeasView } from '@/components/ideas/ideas-view'
 import { IncomeView } from '@/components/income/income-view'
+import { FinancesView } from '@/components/finances/finances-view'
 import { BrandsView } from '@/components/brands/brands-view'
 import { AffiliatesView } from '@/components/affiliates/affiliates-view'
 import { cn } from '@/lib/utils'
@@ -18,6 +19,7 @@ function SectionContent({ section }: { section: Section }) {
     case 'calendario': return <CalendarView />
     case 'ideas':      return <IdeasView />
     case 'ingresos':   return <IncomeView />
+    case 'finanzas':   return <FinancesView />
     case 'marcas':     return <BrandsView />
     case 'afiliados':  return <AffiliatesView />
     default:           return <DashboardView />
@@ -25,7 +27,7 @@ function SectionContent({ section }: { section: Section }) {
 }
 
 const VALID_SECTIONS: Section[] = [
-  'dashboard','contenido','calendario','ideas','ingresos','marcas','afiliados',
+  'dashboard','contenido','calendario','ideas','ingresos','finanzas','marcas','afiliados',
 ]
 
 export function MainLayout() {

@@ -31,6 +31,10 @@ const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', '
 const INPUT =
   'w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-colors'
 
+// Misma estética que INPUT pero sin w-full, para usar dentro de filas flex
+const INPUT_FLEX =
+  'px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-colors'
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
@@ -460,13 +464,13 @@ export function FinancesView() {
             <div className="space-y-2">
               <div className="flex items-center gap-2 px-1">
                 <span className="flex-1 text-[11px] font-medium text-zinc-400 uppercase tracking-wide">Categoría</span>
-                <span className="w-28 text-[11px] font-medium text-zinc-400 uppercase tracking-wide">Límite $</span>
+                <span className="w-24 text-[11px] font-medium text-zinc-400 uppercase tracking-wide">Límite $</span>
                 <span className="w-7" />
               </div>
               {budgetRows.map((row, idx) => (
                 <div key={idx} className="flex items-center gap-2">
                   <input
-                    className={INPUT + ' flex-1'}
+                    className={INPUT_FLEX + ' flex-1 min-w-0'}
                     list="categorias-sugeridas"
                     value={row.category}
                     onChange={(e) => updateBudgetRow(idx, { category: e.target.value })}
@@ -474,7 +478,7 @@ export function FinancesView() {
                   />
                   <input
                     type="number"
-                    className={INPUT + ' w-28'}
+                    className={INPUT_FLEX + ' w-24 shrink-0'}
                     value={row.monthly_limit || ''}
                     onChange={(e) => updateBudgetRow(idx, { monthly_limit: Number(e.target.value) })}
                     placeholder="0"

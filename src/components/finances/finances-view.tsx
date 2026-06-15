@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import type { Income, Expense, Budget, ExpenseCategory } from '@/lib/supabase'
-import { EXPENSE_CATEGORIES, EXPENSE_CATEGORY_LABELS } from '@/lib/supabase'
+import type { Income, Expense, Budget } from '@/lib/supabase'
+import { DEFAULT_CATEGORIES } from '@/lib/supabase'
 import {
   Dialog,
   DialogContent,
@@ -41,19 +41,21 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 type ExpenseForm = {
-  category: ExpenseCategory
+  category: string
   amount: number
   month: string
   year: number
   description: string
 }
 
+type BudgetRow = { id?: string; category: string; monthly_limit: number }
+
 const now = new Date()
 const CURRENT_MONTH = MONTHS[now.getMonth()]
 const CURRENT_YEAR = now.getFullYear()
 
 const defaultExpenseForm = (): ExpenseForm => ({
-  category: 'software',
+  category: '',
   amount: 0,
   month: CURRENT_MONTH,
   year: CURRENT_YEAR,
@@ -75,9 +77,7 @@ export function FinancesView() {
 
   // Budget modal
   const [budgetOpen, setBudgetOpen] = useState(false)
-  const [budgetDraft, setBudgetDraft] = useState<Record<ExpenseCategory, number>>(
-    {} as Record<ExpenseCategory, number>
-  )
+  const [budgetRows, setBudgetRows] = useState<BudgetRow[]>([])
   const [savingBudget, setSavingBudget] = useState(false)
 
   useEffect(() => {
@@ -104,11 +104,20 @@ export function FinancesView() {
 
   const neto = ingresosMes - gastosMes
 
-  function spentInCategory(cat: ExpenseCategory): number {
+  function spentInCategory(cat: string): number {
     return expenses
       .filter((e) => e.category === cat && e.month === CURRENT_MONTH && e.year === CURRENT_YEAR)
       .reduce((acc, e) => acc + e.amount, 0)
   }
+
+  // Categorías existentes (de presupuestos + gastos ya registrados) para sugerencias
+  const knownCategories = Array.from(
+    new Set([
+      ...budgets.map((b) => b.category),
+      ...expenses.map((e) => e.category),
+      ...DEFAULT_CATEGORIES,
+    ])
+  ).filter(Boolean)
 
   // ── Gastos CRUD ──────────────────────────────────────────────────────────
   function openCreate() {
@@ -163,42 +172,72 @@ export function FinancesView() {
 
   // ── Presupuestos ─────────────────────────────────────────────────────────
   function openBudgets() {
-    const draft = {} as Record<ExpenseCategory, number>
-    for (const { value } of EXPENSE_CATEGORIES) {
-      draft[value] = budgets.find((b) => b.category === value)?.monthly_limit ?? 0
+    const rows: BudgetRow[] = budgets.map((b) => ({
+      id: b.id,
+      category: b.category,
+      monthly_limit: b.monthly_limit,
+    }))
+    if (rows.length === 0) {
+      rows.push({ category: '', monthly_limit: 0 })
     }
-    setBudgetDraft(draft)
+    setBudgetRows(rows)
     setBudgetOpen(true)
+  }
+
+  function addBudgetRow() {
+    setBudgetRows((prev) => [...prev, { category: '', monthly_limit: 0 }])
+  }
+
+  function updateBudgetRow(idx: number, patch: Partial<BudgetRow>) {
+    setBudgetRows((prev) => prev.map((r, i) => (i === idx ? { ...r, ...patch } : r)))
+  }
+
+  function removeBudgetRow(idx: number) {
+    setBudgetRows((prev) => prev.filter((_, i) => i !== idx))
   }
 
   async function handleSaveBudgets() {
     setSavingBudget(true)
-    const next = [...budgets]
-    for (const { value } of EXPENSE_CATEGORIES) {
-      const limit = budgetDraft[value] ?? 0
-      const existing = budgets.find((b) => b.category === value)
-      if (existing) {
-        if (existing.monthly_limit !== limit) {
+
+    // Filas válidas (con nombre de categoría)
+    const validRows = budgetRows.filter((r) => r.category.trim())
+
+    // Borrar presupuestos que el usuario quitó de la lista
+    const keptIds = new Set(validRows.filter((r) => r.id).map((r) => r.id))
+    const toDelete = budgets.filter((b) => !keptIds.has(b.id))
+    for (const b of toDelete) {
+      await supabase.from('budgets').delete().eq('id', b.id)
+    }
+
+    const next: Budget[] = []
+    for (const row of validRows) {
+      const category = row.category.trim()
+      const limit = row.monthly_limit || 0
+      if (row.id) {
+        // Actualizar existente
+        const original = budgets.find((b) => b.id === row.id)
+        if (original && (original.category !== category || original.monthly_limit !== limit)) {
           const { data } = await supabase
             .from('budgets')
-            .update({ monthly_limit: limit })
-            .eq('id', existing.id)
+            .update({ category, monthly_limit: limit })
+            .eq('id', row.id)
             .select()
             .single()
-          if (data) {
-            const idx = next.findIndex((b) => b.id === existing.id)
-            next[idx] = data as Budget
-          }
+          if (data) next.push(data as Budget)
+        } else if (original) {
+          next.push(original)
         }
-      } else if (limit > 0) {
+      } else {
+        // Insertar nuevo
         const { data } = await supabase
           .from('budgets')
-          .insert({ category: value, monthly_limit: limit })
+          .insert({ category, monthly_limit: limit })
           .select()
           .single()
         if (data) next.push(data as Budget)
       }
     }
+
     setBudgets(next)
     setSavingBudget(false)
     setBudgetOpen(false)
@@ -286,7 +325,7 @@ export function FinancesView() {
               return (
                 <div key={b.id}>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-sm text-zinc-700 dark:text-zinc-300">{EXPENSE_CATEGORY_LABELS[b.category]}</span>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-300">{b.category}</span>
                     <span className={`text-xs font-medium ${over ? 'text-red-500' : 'text-zinc-500 dark:text-zinc-400'}`}>
                       ${spent.toLocaleString()} / ${b.monthly_limit.toLocaleString()}
                       {over && ' · excedido'}
@@ -318,11 +357,11 @@ export function FinancesView() {
               <div key={e.id} className="flex items-center gap-4 px-6 py-3.5 group hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200 truncate">
-                    {e.description || EXPENSE_CATEGORY_LABELS[e.category]}
+                    {e.description || e.category}
                   </p>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">
-                      {EXPENSE_CATEGORY_LABELS[e.category]}
+                      {e.category}
                     </span>
                     <span className="text-xs text-zinc-400">{e.month} {e.year}</span>
                   </div>
@@ -361,11 +400,18 @@ export function FinancesView() {
           </DialogHeader>
           <DialogBody>
             <Field label="Categoría">
-              <select className={INPUT} value={form.category} onChange={(e) => set('category', e.target.value as ExpenseCategory)}>
-                {EXPENSE_CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
+              <input
+                className={INPUT}
+                list="categorias-sugeridas"
+                value={form.category}
+                onChange={(e) => set('category', e.target.value)}
+                placeholder="Escribe o elige una categoría"
+              />
+              <datalist id="categorias-sugeridas">
+                {knownCategories.map((c) => (
+                  <option key={c} value={c} />
                 ))}
-              </select>
+              </datalist>
             </Field>
             <Field label="Monto ($)">
               <input type="number" className={INPUT} value={form.amount || ''} onChange={(e) => set('amount', Number(e.target.value))} placeholder="0" />
@@ -407,18 +453,50 @@ export function FinancesView() {
             <DialogClose />
           </DialogHeader>
           <DialogBody>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">Define cuánto planeas gastar al mes en cada categoría. Deja en 0 las que no quieras controlar.</p>
-            {EXPENSE_CATEGORIES.map((c) => (
-              <Field key={c.value} label={c.label}>
-                <input
-                  type="number"
-                  className={INPUT}
-                  value={budgetDraft[c.value] || ''}
-                  onChange={(e) => setBudgetDraft((p) => ({ ...p, [c.value]: Number(e.target.value) }))}
-                  placeholder="0"
-                />
-              </Field>
-            ))}
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Crea tus propias categorías y define cuánto planeas gastar al mes en cada una.
+            </p>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 px-1">
+                <span className="flex-1 text-[11px] font-medium text-zinc-400 uppercase tracking-wide">Categoría</span>
+                <span className="w-28 text-[11px] font-medium text-zinc-400 uppercase tracking-wide">Límite $</span>
+                <span className="w-7" />
+              </div>
+              {budgetRows.map((row, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <input
+                    className={INPUT + ' flex-1'}
+                    list="categorias-sugeridas"
+                    value={row.category}
+                    onChange={(e) => updateBudgetRow(idx, { category: e.target.value })}
+                    placeholder="Ej: Marketing, Equipo…"
+                  />
+                  <input
+                    type="number"
+                    className={INPUT + ' w-28'}
+                    value={row.monthly_limit || ''}
+                    onChange={(e) => updateBudgetRow(idx, { monthly_limit: Number(e.target.value) })}
+                    placeholder="0"
+                  />
+                  <button
+                    onClick={() => removeBudgetRow(idx)}
+                    className="w-7 h-9 flex items-center justify-center text-zinc-400 hover:text-red-500 transition-colors shrink-0"
+                    title="Quitar"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={addBudgetRow}
+              className="flex items-center gap-1.5 text-sm font-medium text-indigo-500 hover:text-indigo-600 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Agregar categoría
+            </button>
           </DialogBody>
           <DialogFooter>
             <DialogClose className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100">

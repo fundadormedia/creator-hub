@@ -65,13 +65,8 @@ export interface IncomeChartData {
   afiliados: number
 }
 
-export type ExpenseCategory =
-  | 'software'
-  | 'equipo'
-  | 'publicidad'
-  | 'edicion'
-  | 'suscripciones'
-  | 'otros'
+// Las categorías son texto libre — cada usuario define las suyas
+export type ExpenseCategory = string
 
 export interface Expense {
   id: string
@@ -90,23 +85,15 @@ export interface Budget {
   created_at: string
 }
 
-export const EXPENSE_CATEGORIES: { value: ExpenseCategory; label: string }[] = [
-  { value: 'software',      label: 'Software / Herramientas' },
-  { value: 'equipo',        label: 'Equipo (cámara, luces…)' },
-  { value: 'publicidad',    label: 'Publicidad / Ads' },
-  { value: 'edicion',       label: 'Edición / Freelancers' },
-  { value: 'suscripciones', label: 'Suscripciones' },
-  { value: 'otros',         label: 'Otros' },
+// Sugerencias por defecto (el usuario puede usar estas o crear las propias)
+export const DEFAULT_CATEGORIES: string[] = [
+  'Software / Herramientas',
+  'Equipo',
+  'Publicidad / Ads',
+  'Edición / Freelancers',
+  'Suscripciones',
+  'Otros',
 ]
-
-export const EXPENSE_CATEGORY_LABELS: Record<ExpenseCategory, string> = {
-  software:      'Software / Herramientas',
-  equipo:        'Equipo',
-  publicidad:    'Publicidad / Ads',
-  edicion:       'Edición / Freelancers',
-  suscripciones: 'Suscripciones',
-  otros:         'Otros',
-}
 
 const MONTH_ORDER: Record<string, number> = {
   Ene: 1, Feb: 2, Mar: 3, Abr: 4, May: 5, Jun: 6,

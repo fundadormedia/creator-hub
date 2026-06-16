@@ -11,6 +11,12 @@ import { createRouteClient } from '@/lib/supabase-route'
 
 type Action = 'extraer-voz' | 'escribir-post'
 
+// Límite diario por acción (protege créditos de Anthropic mientras es gratis)
+const DAILY_LIMITS: Record<Action, number> = {
+  'extraer-voz': 3,
+  'escribir-post': 10,
+}
+
 interface ExtraerVozPayload {
   action: 'extraer-voz'
   posts: string // 5-10 posts del creador, pegados (cualquier separador)
@@ -154,6 +160,31 @@ ${p.format === 'Carrusel'
 [1-2 líneas: la psicología detrás, para que el creador aprenda]`
 }
 
+type RouteClient = Awaited<ReturnType<typeof createRouteClient>>
+
+// Verifica el límite diario por acción y, si hay cupo, registra el uso.
+// RLS limita el conteo a las filas del propio usuario.
+async function checkAndLogUsage(
+  supabase: RouteClient,
+  userId: string,
+  action: Action
+): Promise<{ allowed: boolean; limit: number }> {
+  const limit = DAILY_LIMITS[action]
+  const startOfDay = new Date()
+  startOfDay.setHours(0, 0, 0, 0)
+
+  const { count } = await supabase
+    .from('coach_usage')
+    .select('id', { count: 'exact', head: true })
+    .eq('action', action)
+    .gte('created_at', startOfDay.toISOString())
+
+  if ((count ?? 0) >= limit) return { allowed: false, limit }
+
+  await supabase.from('coach_usage').insert({ user_id: userId, action })
+  return { allowed: true, limit }
+}
+
 export async function POST(request: NextRequest) {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) {
@@ -187,6 +218,14 @@ export async function POST(request: NextRequest) {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
           return NextResponse.json({ error: 'Debes iniciar sesión.' }, { status: 401 })
+        }
+
+        const usage = await checkAndLogUsage(supabase, user.id, 'extraer-voz')
+        if (!usage.allowed) {
+          return NextResponse.json(
+            { error: `Llegaste al límite de ${usage.limit} análisis de voz por día. Vuelve mañana. 🙌` },
+            { status: 429 }
+          )
         }
 
         // Crown jewel → modelo fuerte. Corre 1 vez por creador, costo despreciable.
@@ -258,6 +297,14 @@ export async function POST(request: NextRequest) {
           return NextResponse.json(
             { error: 'Primero extrae tu voz (arriba) para que escriba como tú.' },
             { status: 409 }
+          )
+        }
+
+        const usage = await checkAndLogUsage(supabase, user.id, 'escribir-post')
+        if (!usage.allowed) {
+          return NextResponse.json(
+            { error: `Llegaste al límite de ${usage.limit} posts por día. Vuelve mañana para escribir más. 🙌` },
+            { status: 429 }
           )
         }
 

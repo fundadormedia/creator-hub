@@ -9,7 +9,7 @@ import { createRouteClient } from '@/lib/supabase-route'
 // se sumarán como nuevos `case` leyendo el voice_profile guardado.
 // ============================================================
 
-type Action = 'extraer-voz'
+type Action = 'extraer-voz' | 'escribir-post'
 
 interface ExtraerVozPayload {
   action: 'extraer-voz'
@@ -18,7 +18,15 @@ interface ExtraerVozPayload {
   objective: string
 }
 
-type Payload = ExtraerVozPayload
+interface EscribirPostPayload {
+  action: 'escribir-post'
+  topic: string
+  format: string // Reel / Carrusel / Post estático / Historia / Hilo
+  platform: string // Instagram / TikTok / LinkedIn ...
+  goal: string // crecer / vender / educar / conectar
+}
+
+type Payload = ExtraerVozPayload | EscribirPostPayload
 
 // El esquema que Claude DEBE devolver. Es el contrato que consumen
 // los otros sombreros, así que se valida antes de guardar.
@@ -95,6 +103,55 @@ function parseVoiceProfile(raw: string): VoiceProfile {
     throw new Error('El perfil de voz devuelto no tiene la forma esperada.')
   }
   return parsed
+}
+
+// ── Sombrero Copywriter: escribe un post en la voz guardada del creador ──
+function buildEscribirPostPrompt(
+  v: VoiceProfile,
+  p: EscribirPostPayload,
+  niche: string | null,
+  objective: string | null
+): string {
+  return `Eres el Content Coach del creador: su copywriter de confianza. Tu única misión es escribir EN SU VOZ, no en la tuya. Si el resultado suena a IA genérica o a otro creador, fallaste.
+
+═══ LA VOZ DEL CREADOR (respétala como ley) ═══
+${v.instruccion_para_escribir_como_el}
+
+- Arquetipo: ${v.arquetipo}
+- Tono: ${v.tono?.join(', ')}
+- Formalidad: ${v.nivel_formalidad}
+- Ritmo: ${v.ritmo}
+- Vocabulario/muletillas que SÍ usa (úsalas con naturalidad, sin forzar): ${v.vocabulario_firma?.join(', ')}
+- Modismos/región: ${v.modismos_region}
+- Emojis: ${v.uso_emojis}
+- Cómo suele abrir (hooks): ${v.estructura_hooks?.join(' | ')}
+- Formato típico de sus posts: ${v.formato_tipico}
+- Le habla a: ${v.audiencia}
+- NUNCA hagas esto (su anti-voz): ${v.que_evita?.join(', ')}
+- Ejemplos textuales de su voz (calca el estilo, no el contenido): ${v.muestras_de_voz?.map((m) => `"${m}"`).join(' ')}
+
+═══ EL ENCARGO ═══
+- Tema: ${p.topic}
+- Formato: ${p.format}
+- Plataforma: ${p.platform}
+- Objetivo del post: ${p.goal}
+- Nicho del creador: ${niche || 'el suyo habitual'}
+- Meta de negocio: ${objective || 'crecer y conectar'}
+
+═══ PRINCIPIOS (aplícalos DENTRO de su voz, no por encima) ═══
+1. Hook en los primeros 3 segundos con curiosity gap — específico, nada de "hoy te hablo de...".
+2. Especificidad: números y detalles concretos antes que generalidades.
+3. Estructura PERO/POR ESO: cada línea crea tensión o consecuencia, el post avanza.
+4. Ritmo de retención propio de ${p.platform}.
+5. Si el objetivo es vender, el CTA llega cuando la persona ya quiere actuar — invitas, no ruegas.
+
+FORMATO DE RESPUESTA (en español, sin preámbulos):
+${p.format === 'Carrusel'
+      ? `**🎯 GANCHO (slide 1)**\n[el hook]\n\n**📑 SLIDES**\nSlide 2: ...\nSlide 3: ...\n(4-7 slides)\n\n**✍️ CAPTION**\n[caption en su voz]\n\n**#️⃣ HASHTAGS**\n[5-8 hashtags relevantes]`
+      : `**🎬 HOOK (0-3 seg)**\n[el gancho]\n\n**📖 CUERPO / GUION**\n[el contenido en su voz, con indicaciones [PAUSA], [A CÁMARA] si es video]\n\n**✅ CTA**\n[cierre alineado al objetivo]\n\n**📝 CAPTION**\n[caption listo para publicar en su voz]\n\n**#️⃣ HASHTAGS**\n[5-8 hashtags relevantes]`}
+
+**🧠 POR QUÉ FUNCIONA**
+[1-2 líneas: la psicología detrás, para que el creador aprenda]`
 }
 
 export async function POST(request: NextRequest) {
@@ -175,6 +232,53 @@ export async function POST(request: NextRequest) {
         }
 
         return NextResponse.json({ voiceProfile })
+      }
+
+      case 'escribir-post': {
+        const p = body as EscribirPostPayload
+
+        if (!p.topic || p.topic.trim().length < 3) {
+          return NextResponse.json({ error: 'Dime sobre qué quieres el post.' }, { status: 400 })
+        }
+
+        const supabase = await createRouteClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          return NextResponse.json({ error: 'Debes iniciar sesión.' }, { status: 401 })
+        }
+
+        // Cargar la voz guardada — es requisito del Copywriter
+        const { data: voiceRow } = await supabase
+          .from('creator_voice')
+          .select('voice_profile, niche, objective')
+          .eq('user_id', user.id)
+          .maybeSingle()
+
+        if (!voiceRow?.voice_profile) {
+          return NextResponse.json(
+            { error: 'Primero extrae tu voz (arriba) para que escriba como tú.' },
+            { status: 409 }
+          )
+        }
+
+        const message = await client.messages.create({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 2000,
+          messages: [
+            {
+              role: 'user',
+              content: buildEscribirPostPrompt(
+                voiceRow.voice_profile as VoiceProfile,
+                p,
+                voiceRow.niche ?? null,
+                voiceRow.objective ?? null
+              ),
+            },
+          ],
+        })
+
+        const post = message.content[0].type === 'text' ? message.content[0].text : ''
+        return NextResponse.json({ post })
       }
 
       default:

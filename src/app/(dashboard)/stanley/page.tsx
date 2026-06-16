@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useUser } from '@/hooks/use-user'
-import { Sparkles, Wand2, Loader2, Fingerprint, CheckCircle2 } from 'lucide-react'
+import { Sparkles, Wand2, Loader2, Fingerprint, CheckCircle2, PenLine, Copy, BookmarkPlus } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 const INPUT =
   'w-full px-3 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-colors'
@@ -151,6 +152,60 @@ export default function StanleyPage() {
     setLoading(false)
   }
 
+  // ── Sombrero Copywriter ──
+  const [topic, setTopic] = useState('')
+  const [format, setFormat] = useState('Reel')
+  const [platform, setPlatform] = useState('Instagram')
+  const [goal, setGoal] = useState('Crecer')
+  const [post, setPost] = useState('')
+  const [writing, setWriting] = useState(false)
+  const [writeError, setWriteError] = useState('')
+  const [copied, setCopied] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  async function handleWrite() {
+    if (topic.trim().length < 3) return
+    setWriteError('')
+    setPost('')
+    setWriting(true)
+
+    const res = await fetch('/api/stanley', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'escribir-post', topic, format, platform, goal }),
+    })
+    const data = await res.json()
+
+    if (!res.ok || data.error) {
+      setWriteError(data.error ?? 'No pude escribir el post')
+    } else {
+      setPost(data.post)
+    }
+    setWriting(false)
+  }
+
+  function handleCopy() {
+    navigator.clipboard.writeText(post)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  async function handleSaveToIdeas() {
+    if (!post || !user) return
+    setSaving(true)
+    await supabase.from('ideas').insert({
+      title: `${format}: ${topic}`,
+      description: post,
+      platform,
+      priority: 'Alta',
+      user_id: user.id,
+    })
+    setSaved(true)
+    setSaving(false)
+    setTimeout(() => setSaved(false), 3000)
+  }
+
   return (
     <div className="p-8 max-w-3xl space-y-8">
       <div className="flex items-center gap-3">
@@ -216,6 +271,103 @@ export default function StanleyPage() {
       </div>
 
       {voice && <VoiceCard v={voice} />}
+
+      {/* ── Sombrero Copywriter ─────────────────────────────────────────── */}
+      {voice && (
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-8 space-y-5">
+          <div className="flex items-center gap-2">
+            <PenLine className="w-5 h-5 text-indigo-500" />
+            <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Escribe en mi voz</h2>
+          </div>
+          <p className="text-sm text-zinc-500 -mt-2">Dime qué quieres publicar y lo escribo imitando tu voz exacta.</p>
+
+          <Field label="¿Sobre qué quieres el post?">
+            <input
+              className={INPUT}
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              placeholder="Ej: Por qué dejé mi trabajo para emprender"
+            />
+          </Field>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Field label="Formato">
+              <div className="flex flex-wrap gap-2 mt-1">
+                {['Reel', 'Carrusel', 'Post estático', 'Historia'].map((f) => (
+                  <Pill key={f} active={format === f} onClick={() => setFormat(f)}>{f}</Pill>
+                ))}
+              </div>
+            </Field>
+            <Field label="Plataforma">
+              <div className="flex flex-wrap gap-2 mt-1">
+                {['Instagram', 'TikTok', 'LinkedIn', 'YouTube'].map((pl) => (
+                  <Pill key={pl} active={platform === pl} onClick={() => setPlatform(pl)}>{pl}</Pill>
+                ))}
+              </div>
+            </Field>
+            <Field label="Objetivo">
+              <div className="flex flex-wrap gap-2 mt-1">
+                {['Crecer', 'Vender', 'Educar', 'Conectar'].map((g) => (
+                  <Pill key={g} active={goal === g} onClick={() => setGoal(g)}>{g}</Pill>
+                ))}
+              </div>
+            </Field>
+          </div>
+
+          {writeError && <p className="text-sm text-red-500 dark:text-red-400">{writeError}</p>}
+
+          <button
+            onClick={handleWrite}
+            disabled={writing || topic.trim().length < 3}
+            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+          >
+            {writing ? <Loader2 className="w-4 h-4 animate-spin" /> : <PenLine className="w-4 h-4" />}
+            {writing ? 'Escribiendo en tu voz...' : 'Escribir post'}
+          </button>
+
+          {post && (
+            <div className="border border-zinc-200 dark:border-zinc-700 rounded-xl overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700">
+                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">En tu voz</span>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleSaveToIdeas}
+                    disabled={saving || saved}
+                    className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-emerald-500 transition-colors disabled:opacity-50"
+                  >
+                    {saved
+                      ? <><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />Guardado</>
+                      : <><BookmarkPlus className="w-3.5 h-3.5" />{saving ? 'Guardando...' : 'Guardar en Ideas'}</>}
+                  </button>
+                  <button onClick={handleCopy} className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-indigo-500 transition-colors">
+                    {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copied ? 'Copiado' : 'Copiar'}
+                  </button>
+                </div>
+              </div>
+              <div className="p-4 text-sm text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap leading-relaxed">
+                {post}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
+  )
+}
+
+function Pill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        'px-3 py-1.5 rounded-full text-xs font-medium border transition-all',
+        active
+          ? 'bg-indigo-500 border-indigo-500 text-white'
+          : 'bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-indigo-400 hover:text-indigo-500'
+      )}
+    >
+      {children}
+    </button>
   )
 }

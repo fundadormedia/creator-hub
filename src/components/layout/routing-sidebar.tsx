@@ -11,6 +11,7 @@ import {
   FileUser,
   User,
   Clapperboard,
+  Sparkles,
   Zap,
   ChevronLeft,
   ChevronRight,
@@ -40,6 +41,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: 'dashboard',  label: 'Dashboard',   icon: LayoutDashboard, href: '/', spaSection: 'dashboard' },
+  { id: 'stanley',    label: 'Content Coach', icon: Sparkles,      href: '/stanley' },
   { id: 'perfil',     label: 'Perfil',      icon: User,            href: '/perfil' },
   { id: 'contenido',  label: 'Contenido',   icon: FileVideo,       href: '/', spaSection: 'contenido' },
   { id: 'calendario', label: 'Calendario',  icon: Calendar,        href: '/', spaSection: 'calendario' },
@@ -79,6 +81,7 @@ export function RoutingSidebar({ isCollapsed, onToggleCollapse }: RoutingSidebar
     if (item.href === '/mediakit') return pathname.startsWith('/mediakit')
     if (item.href === '/perfil') return pathname.startsWith('/perfil')
     if (item.href === '/tiktok-shop') return pathname.startsWith('/tiktok-shop')
+    if (item.href === '/stanley') return pathname.startsWith('/stanley')
     return false
   }
 

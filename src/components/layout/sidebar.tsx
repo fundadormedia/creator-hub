@@ -10,6 +10,7 @@ import {
   Link2,
   FileUser,
   Clapperboard,
+  Sparkles,
   User,
   Zap,
   ChevronLeft,
@@ -119,6 +120,19 @@ export function Sidebar({
         })}
 
         {/* Routed pages (no son secciones SPA) */}
+        <button
+          onClick={() => router.push('/stanley')}
+          title={isCollapsed ? 'Content Coach' : undefined}
+          className={cn(
+            'w-full flex items-center rounded-lg text-sm font-medium transition-all duration-150',
+            isCollapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2.5',
+            'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
+          )}
+        >
+          <Sparkles className="w-4 h-4 shrink-0 text-indigo-500" />
+          {!isCollapsed && <span className="whitespace-nowrap">Content Coach</span>}
+        </button>
+
         <button
           onClick={() => router.push('/tiktok-shop')}
           title={isCollapsed ? 'Script UGC' : undefined}

@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dialog'
 import { MetricCard } from '@/components/dashboard/metric-card'
 import { IncomeView } from '@/components/income/income-view'
+import { RunwaySimulator } from '@/components/finances/runway-simulator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   TrendingDown,
@@ -283,9 +284,10 @@ export function FinancesView() {
 
       {/* ── Pestañas: Gastos | Ingresos ──────────────────────────────────── */}
       <Tabs defaultValue="gastos">
-        <TabsList className="bg-zinc-100 dark:bg-zinc-800 p-1 rounded-lg grid grid-cols-2 w-full max-w-xs">
+        <TabsList className="bg-zinc-100 dark:bg-zinc-800 p-1 rounded-lg grid grid-cols-3 w-full max-w-md">
           <TabsTrigger value="gastos" className="rounded-md text-sm">Gastos</TabsTrigger>
           <TabsTrigger value="ingresos" className="rounded-md text-sm">Ingresos</TabsTrigger>
+          <TabsTrigger value="runway" className="rounded-md text-sm">Runway</TabsTrigger>
         </TabsList>
 
         {/* ── Tab Gastos ─────────────────────────────────────────────────── */}
@@ -392,6 +394,11 @@ export function FinancesView() {
         {/* ── Tab Ingresos ───────────────────────────────────────────────── */}
         <TabsContent value="ingresos" className="mt-6">
           <IncomeView embedded />
+        </TabsContent>
+
+        {/* ── Tab Runway (simulador) ─────────────────────────────────────── */}
+        <TabsContent value="runway" className="mt-6">
+          <RunwaySimulator />
         </TabsContent>
       </Tabs>
 

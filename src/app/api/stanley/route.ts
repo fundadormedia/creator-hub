@@ -9,13 +9,14 @@ import { createRouteClient } from '@/lib/supabase-route'
 // se sumarán como nuevos `case` leyendo el voice_profile guardado.
 // ============================================================
 
-type Action = 'extraer-voz' | 'escribir-post' | 'plan-semanal'
+type Action = 'extraer-voz' | 'escribir-post' | 'plan-semanal' | 'score-hook'
 
 // Límite diario por acción (protege créditos de Anthropic mientras es gratis)
 const DAILY_LIMITS: Record<Action, number> = {
   'extraer-voz': 3,
   'escribir-post': 10,
   'plan-semanal': 5,
+  'score-hook': 15,
 }
 
 interface ExtraerVozPayload {
@@ -39,7 +40,23 @@ interface PlanSemanalPayload {
   postsPerWeek: number // cuántas piezas planear
 }
 
-type Payload = ExtraerVozPayload | EscribirPostPayload | PlanSemanalPayload
+interface ScoreHookPayload {
+  action: 'score-hook'
+  hook: string // el hook o idea a evaluar
+  platform: string
+}
+
+type Payload = ExtraerVozPayload | EscribirPostPayload | PlanSemanalPayload | ScoreHookPayload
+
+// Resultado del Analista
+interface HookScore {
+  score: number // 0-100
+  veredicto: string // 1 frase
+  fortalezas: string[]
+  debilidades: string[]
+  mejoras: string[] // 2-3 hooks reescritos, mejores
+  razon: string // por qué ese score
+}
 
 // Una pieza del plan semanal que devuelve el Estratega
 interface PlanItem {
@@ -236,6 +253,61 @@ function parsePlan(raw: string): PlanItem[] {
   if (!Array.isArray(parsed) || parsed.length === 0) {
     throw new Error('El plan devuelto no es una lista válida.')
   }
+  return parsed
+}
+
+// ── Sombrero Analista: predice si un hook va a pegar (heurístico) ──
+function buildScoreHookPrompt(
+  v: VoiceProfile,
+  p: ScoreHookPayload,
+  niche: string | null
+): string {
+  return `Eres un analista brutal de contenido viral en ${p.platform} para LatAm. Has estudiado miles de Reels/TikToks que explotaron y miles que murieron. Tu trabajo: predecir si un hook va a frenar el scroll o si la gente lo va a saltar. Eres honesto, no complaciente — si el hook es flojo, lo dices y das el porqué.
+
+CONTEXTO DEL CREADOR:
+- Nicho: ${niche || 'general'}
+- Audiencia: ${v.audiencia}
+- Su voz/arquetipo: ${v.arquetipo}
+
+HOOK A EVALUAR (plataforma: ${p.platform}):
+"""
+${p.hook}
+"""
+
+Evalúa contra los factores reales de retención en LatAm:
+1. Curiosity gap / bucle abierto en los primeros 3 segundos
+2. Especificidad (números, detalles concretos vs generalidades)
+3. Stakes / tensión emocional o promesa clara
+4. Pattern interrupt — ¿rompe la expectativa o suena a lo de siempre?
+5. Relevancia para SU audiencia y nicho
+6. Naturalidad en su voz (no suena a anuncio)
+
+Sé exigente con el score: 90+ solo para hooks excepcionales. 70-89 sólido. 50-69 mejorable. <50 flojo. La mayoría de hooks reales caen en 40-70.
+
+Responde ÚNICAMENTE con un objeto JSON válido (sin texto antes/después, sin markdown):
+
+{
+  "score": <número entero 0-100>,
+  "veredicto": "1 frase honesta sobre si va a pegar o no",
+  "fortalezas": ["qué tiene bien — 1 a 3 puntos, o [] si nada"],
+  "debilidades": ["qué lo frena — 1 a 3 puntos concretos"],
+  "mejoras": ["2-3 versiones reescritas del hook, más fuertes, en la voz del creador"],
+  "razon": "1-2 líneas explicando el score para que el creador aprenda el criterio"
+}`
+}
+
+function parseScore(raw: string): HookScore {
+  let cleaned = raw.trim()
+  const fence = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/)
+  if (fence) cleaned = fence[1].trim()
+  const first = cleaned.indexOf('{')
+  const last = cleaned.lastIndexOf('}')
+  if (first !== -1 && last !== -1) cleaned = cleaned.slice(first, last + 1)
+  const parsed = JSON.parse(cleaned) as HookScore
+  if (typeof parsed.score !== 'number' || !Array.isArray(parsed.mejoras)) {
+    throw new Error('El análisis devuelto no tiene la forma esperada.')
+  }
+  parsed.score = Math.max(0, Math.min(100, Math.round(parsed.score)))
   return parsed
 }
 
@@ -466,6 +538,63 @@ export async function POST(request: NextRequest) {
         }
 
         return NextResponse.json({ plan })
+      }
+
+      case 'score-hook': {
+        const p = body as ScoreHookPayload
+
+        if (!p.hook || p.hook.trim().length < 5) {
+          return NextResponse.json({ error: 'Pega el hook o idea que quieres evaluar.' }, { status: 400 })
+        }
+
+        const supabase = await createRouteClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          return NextResponse.json({ error: 'Debes iniciar sesión.' }, { status: 401 })
+        }
+
+        const { data: voiceRow } = await supabase
+          .from('creator_voice')
+          .select('voice_profile, niche')
+          .eq('user_id', user.id)
+          .maybeSingle()
+
+        if (!voiceRow?.voice_profile) {
+          return NextResponse.json(
+            { error: 'Primero extrae tu voz (arriba) para evaluar contra tu audiencia.' },
+            { status: 409 }
+          )
+        }
+
+        const usage = await checkAndLogUsage(supabase, user.id, 'score-hook')
+        if (!usage.allowed) {
+          return NextResponse.json(
+            { error: `Llegaste al límite de ${usage.limit} análisis por día. Vuelve mañana. 🙌` },
+            { status: 429 }
+          )
+        }
+
+        const message = await client.messages.create({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1500,
+          messages: [
+            {
+              role: 'user',
+              content: buildScoreHookPrompt(voiceRow.voice_profile as VoiceProfile, p, voiceRow.niche ?? null),
+            },
+          ],
+        })
+
+        const text = message.content[0].type === 'text' ? message.content[0].text : ''
+        let result: HookScore
+        try {
+          result = parseScore(text)
+        } catch (e) {
+          console.error('No se pudo parsear el score:', e)
+          return NextResponse.json({ error: 'No pude analizar esta vez. Intenta de nuevo.' }, { status: 502 })
+        }
+
+        return NextResponse.json({ result })
       }
 
       default:

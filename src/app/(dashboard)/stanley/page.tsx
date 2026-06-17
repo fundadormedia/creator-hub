@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useUser } from '@/hooks/use-user'
-import { Sparkles, Wand2, Loader2, Fingerprint, CheckCircle2, PenLine, Copy, BookmarkPlus, CalendarDays } from 'lucide-react'
+import { Sparkles, Wand2, Loader2, Fingerprint, CheckCircle2, PenLine, Copy, BookmarkPlus, CalendarDays, Gauge } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const INPUT =
@@ -37,6 +37,15 @@ interface PlanItem {
   hook: string
   objetivo: string
   notas: string
+}
+
+interface HookScore {
+  score: number
+  veredicto: string
+  fortalezas: string[]
+  debilidades: string[]
+  mejoras: string[]
+  razon: string
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -270,6 +279,34 @@ export default function StanleyPage() {
     setTimeout(() => setPlanSaved(false), 4000)
   }
 
+  // ── Sombrero Analista ──
+  const [hookText, setHookText] = useState('')
+  const [hookPlatform, setHookPlatform] = useState('Instagram')
+  const [scoreResult, setScoreResult] = useState<HookScore | null>(null)
+  const [scoring, setScoring] = useState(false)
+  const [scoreError, setScoreError] = useState('')
+
+  async function handleScore() {
+    if (hookText.trim().length < 5) return
+    setScoreError('')
+    setScoreResult(null)
+    setScoring(true)
+
+    const res = await fetch('/api/stanley', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'score-hook', hook: hookText, platform: hookPlatform }),
+    })
+    const data = await res.json()
+
+    if (!res.ok || data.error) {
+      setScoreError(data.error ?? 'No pude analizar el hook')
+    } else {
+      setScoreResult(data.result)
+    }
+    setScoring(false)
+  }
+
   return (
     <div className="p-8 max-w-3xl space-y-8">
       <div className="flex items-center gap-3">
@@ -487,6 +524,114 @@ export default function StanleyPage() {
           )}
         </div>
       )}
+
+      {/* ── Sombrero Analista ───────────────────────────────────────────── */}
+      {voice && (
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-8 space-y-5">
+          <div className="flex items-center gap-2">
+            <Gauge className="w-5 h-5 text-indigo-500" />
+            <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">¿Va a pegar?</h2>
+          </div>
+          <p className="text-sm text-zinc-500 -mt-2">Pega un hook o idea y te digo qué tan probable es que frene el scroll — antes de grabar.</p>
+
+          <Field label="Tu hook o idea">
+            <textarea
+              className={TEXTAREA + ' h-24'}
+              value={hookText}
+              onChange={(e) => setHookText(e.target.value)}
+              placeholder="Ej: Nadie te dice esto sobre ahorrar a los 20..."
+            />
+          </Field>
+
+          <Field label="Plataforma">
+            <div className="flex flex-wrap gap-2 mt-1">
+              {['Instagram', 'TikTok', 'LinkedIn', 'YouTube'].map((pl) => (
+                <Pill key={pl} active={hookPlatform === pl} onClick={() => setHookPlatform(pl)}>{pl}</Pill>
+              ))}
+            </div>
+          </Field>
+
+          {scoreError && <p className="text-sm text-red-500 dark:text-red-400">{scoreError}</p>}
+
+          <button
+            onClick={handleScore}
+            disabled={scoring || hookText.trim().length < 5}
+            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+          >
+            {scoring ? <Loader2 className="w-4 h-4 animate-spin" /> : <Gauge className="w-4 h-4" />}
+            {scoring ? 'Analizando...' : 'Analizar hook'}
+          </button>
+
+          {scoreResult && <ScoreCard r={scoreResult} />}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ScoreCard({ r }: { r: HookScore }) {
+  const tone =
+    r.score >= 90 ? { txt: 'text-emerald-500', bar: 'bg-emerald-500', label: 'Excepcional' }
+    : r.score >= 70 ? { txt: 'text-indigo-500', bar: 'bg-indigo-500', label: 'Sólido' }
+    : r.score >= 50 ? { txt: 'text-amber-500', bar: 'bg-amber-500', label: 'Mejorable' }
+    : { txt: 'text-red-500', bar: 'bg-red-500', label: 'Flojo' }
+
+  return (
+    <div className="border border-zinc-200 dark:border-zinc-700 rounded-xl p-5 space-y-4">
+      <div className="flex items-center gap-4">
+        <div className="text-center shrink-0">
+          <span className={`text-4xl font-bold ${tone.txt}`}>{r.score}</span>
+          <span className="text-sm text-zinc-400">/100</span>
+        </div>
+        <div className="flex-1">
+          <span className={`text-xs font-semibold ${tone.txt}`}>{tone.label}</span>
+          <div className="h-2 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden mt-1">
+            <div className={`h-full rounded-full transition-all ${tone.bar}`} style={{ width: `${r.score}%` }} />
+          </div>
+          <p className="text-sm text-zinc-700 dark:text-zinc-300 mt-2">{r.veredicto}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {r.fortalezas?.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-500 mb-1.5">Fortalezas</p>
+            <ul className="space-y-1 text-sm text-zinc-700 dark:text-zinc-300">
+              {r.fortalezas.map((f, i) => <li key={i}>✓ {f}</li>)}
+            </ul>
+          </div>
+        )}
+        {r.debilidades?.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-red-500 mb-1.5">Qué lo frena</p>
+            <ul className="space-y-1 text-sm text-zinc-700 dark:text-zinc-300">
+              {r.debilidades.map((d, i) => <li key={i}>✗ {d}</li>)}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {r.mejoras?.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500 mb-2">Versiones más fuertes</p>
+          <div className="space-y-2">
+            {r.mejoras.map((m, i) => (
+              <div key={i} className="flex items-start gap-2 bg-zinc-50 dark:bg-zinc-800 rounded-lg p-3">
+                <span className="text-sm text-zinc-800 dark:text-zinc-200 flex-1">{m}</span>
+                <button
+                  onClick={() => navigator.clipboard.writeText(m)}
+                  className="text-zinc-400 hover:text-indigo-500 transition-colors shrink-0"
+                  title="Copiar"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {r.razon && <p className="text-xs text-zinc-400 italic border-t border-zinc-100 dark:border-zinc-800 pt-3">{r.razon}</p>}
     </div>
   )
 }

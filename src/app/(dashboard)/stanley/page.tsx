@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useUser } from '@/hooks/use-user'
-import { Sparkles, Wand2, Loader2, Fingerprint, CheckCircle2, PenLine, Copy, BookmarkPlus } from 'lucide-react'
+import { Sparkles, Wand2, Loader2, Fingerprint, CheckCircle2, PenLine, Copy, BookmarkPlus, CalendarDays } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const INPUT =
@@ -26,6 +26,17 @@ interface VoiceProfile {
   que_evita: string[]
   audiencia: string
   instruccion_para_escribir_como_el: string
+}
+
+interface PlanItem {
+  dia: string
+  plataforma: string
+  formato: string
+  categoria: string
+  titulo: string
+  hook: string
+  objetivo: string
+  notas: string
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -206,6 +217,59 @@ export default function StanleyPage() {
     setTimeout(() => setSaved(false), 3000)
   }
 
+  // ── Sombrero Estratega ──
+  const [planFocus, setPlanFocus] = useState('')
+  const [postsPerWeek, setPostsPerWeek] = useState(5)
+  const [plan, setPlan] = useState<PlanItem[] | null>(null)
+  const [planning, setPlanning] = useState(false)
+  const [planError, setPlanError] = useState('')
+  const [savingPlan, setSavingPlan] = useState(false)
+  const [planSaved, setPlanSaved] = useState(false)
+
+  async function handlePlan() {
+    setPlanError('')
+    setPlan(null)
+    setPlanSaved(false)
+    setPlanning(true)
+
+    const res = await fetch('/api/stanley', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'plan-semanal', focus: planFocus, postsPerWeek }),
+    })
+    const data = await res.json()
+
+    if (!res.ok || data.error) {
+      setPlanError(data.error ?? 'No pude armar el plan')
+    } else {
+      setPlan(data.plan)
+    }
+    setPlanning(false)
+  }
+
+  async function handleSavePlanToCalendar() {
+    if (!plan || !user) return
+    setSavingPlan(true)
+    const today = new Date()
+    const rows = plan.map((it, i) => {
+      const d = new Date(today)
+      d.setDate(today.getDate() + i)
+      return {
+        title: it.titulo,
+        platform: it.plataforma,
+        format: it.formato,
+        category: it.categoria,
+        status: 'programado',
+        date: d.toISOString().split('T')[0],
+        user_id: user.id,
+      }
+    })
+    await supabase.from('content').insert(rows)
+    setPlanSaved(true)
+    setSavingPlan(false)
+    setTimeout(() => setPlanSaved(false), 4000)
+  }
+
   return (
     <div className="p-8 max-w-3xl space-y-8">
       <div className="flex items-center gap-3">
@@ -348,6 +412,77 @@ export default function StanleyPage() {
               <div className="p-4 text-sm text-zinc-800 dark:text-zinc-200 whitespace-pre-wrap leading-relaxed">
                 {post}
               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Sombrero Estratega ──────────────────────────────────────────── */}
+      {voice && (
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-8 space-y-5">
+          <div className="flex items-center gap-2">
+            <CalendarDays className="w-5 h-5 text-indigo-500" />
+            <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Plan de la semana</h2>
+          </div>
+          <p className="text-sm text-zinc-500 -mt-2">Tu Head of Content arma qué publicar cada día. Lo mandas directo a tu Calendario.</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field label="Foco de la semana (opcional)">
+              <input
+                className={INPUT}
+                value={planFocus}
+                onChange={(e) => setPlanFocus(e.target.value)}
+                placeholder="Ej: lanzamiento de mi curso / crecer en TikTok"
+              />
+            </Field>
+            <Field label="Piezas esta semana">
+              <div className="flex flex-wrap gap-2 mt-1">
+                {[3, 4, 5, 6, 7].map((n) => (
+                  <Pill key={n} active={postsPerWeek === n} onClick={() => setPostsPerWeek(n)}>{n}</Pill>
+                ))}
+              </div>
+            </Field>
+          </div>
+
+          {planError && <p className="text-sm text-red-500 dark:text-red-400">{planError}</p>}
+
+          <button
+            onClick={handlePlan}
+            disabled={planning}
+            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+          >
+            {planning ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarDays className="w-4 h-4" />}
+            {planning ? 'Armando tu semana...' : 'Generar plan semanal'}
+          </button>
+
+          {plan && (
+            <div className="space-y-3">
+              {plan.map((it, i) => (
+                <div key={i} className="border border-zinc-200 dark:border-zinc-700 rounded-xl p-4">
+                  <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                    <span className="text-xs font-bold text-indigo-500">{it.dia}</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500">{it.plataforma}</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500">{it.formato}</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-300">{it.objetivo}</span>
+                  </div>
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{it.titulo}</p>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1"><span className="font-medium text-zinc-500">Hook:</span> {it.hook}</p>
+                  {it.notas && <p className="text-xs text-zinc-400 mt-1 italic">{it.notas}</p>}
+                </div>
+              ))}
+
+              <button
+                onClick={handleSavePlanToCalendar}
+                disabled={savingPlan || planSaved}
+                className="flex items-center gap-2 px-5 py-2.5 border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 disabled:opacity-60 text-sm font-medium rounded-lg transition-colors"
+              >
+                {planSaved
+                  ? <><CheckCircle2 className="w-4 h-4" /> Guardado en Calendario</>
+                  : <><CalendarDays className="w-4 h-4" /> {savingPlan ? 'Guardando...' : 'Guardar plan en Calendario'}</>}
+              </button>
+              {planSaved && (
+                <p className="text-xs text-zinc-400">Lo verás como “programado” en tu Calendario y en Contenido, empezando hoy.</p>
+              )}
             </div>
           )}
         </div>

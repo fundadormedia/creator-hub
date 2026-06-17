@@ -9,12 +9,13 @@ import { createRouteClient } from '@/lib/supabase-route'
 // se sumarán como nuevos `case` leyendo el voice_profile guardado.
 // ============================================================
 
-type Action = 'extraer-voz' | 'escribir-post'
+type Action = 'extraer-voz' | 'escribir-post' | 'plan-semanal'
 
 // Límite diario por acción (protege créditos de Anthropic mientras es gratis)
 const DAILY_LIMITS: Record<Action, number> = {
   'extraer-voz': 3,
   'escribir-post': 10,
+  'plan-semanal': 5,
 }
 
 interface ExtraerVozPayload {
@@ -32,7 +33,25 @@ interface EscribirPostPayload {
   goal: string // crecer / vender / educar / conectar
 }
 
-type Payload = ExtraerVozPayload | EscribirPostPayload
+interface PlanSemanalPayload {
+  action: 'plan-semanal'
+  focus: string // tema o campaña de la semana (opcional)
+  postsPerWeek: number // cuántas piezas planear
+}
+
+type Payload = ExtraerVozPayload | EscribirPostPayload | PlanSemanalPayload
+
+// Una pieza del plan semanal que devuelve el Estratega
+interface PlanItem {
+  dia: string // Lunes, Martes...
+  plataforma: string
+  formato: string
+  categoria: string // una de las categorías válidas de content
+  titulo: string // ángulo / título de la pieza
+  hook: string
+  objetivo: string
+  notas: string
+}
 
 // El esquema que Claude DEBE devolver. Es el contrato que consumen
 // los otros sombreros, así que se valida antes de guardar.
@@ -158,6 +177,66 @@ ${p.format === 'Carrusel'
 
 **🧠 POR QUÉ FUNCIONA**
 [1-2 líneas: la psicología detrás, para que el creador aprenda]`
+}
+
+// Categorías válidas de la tabla content (el plan se guarda ahí)
+const CATEGORIAS_VALIDAS = ['Tecnología', 'Lifestyle', 'Negocios', 'Educación', 'Entretenimiento']
+
+// ── Sombrero Estratega: arma el plan de contenido de la semana ──
+function buildPlanSemanalPrompt(
+  v: VoiceProfile,
+  p: PlanSemanalPayload,
+  niche: string | null,
+  objective: string | null
+): string {
+  const n = Math.min(Math.max(p.postsPerWeek || 5, 3), 7)
+  return `Eres el Head of Content (estratega) del creador. No escribes los posts completos — diseñas el PLAN de la semana: qué publicar cada día, en qué plataforma, con qué ángulo y por qué. Piensas como un estratega de crecimiento, no como un generador de relleno.
+
+PERFIL DEL CREADOR:
+- Nicho: ${niche || 'inferir del estilo'}
+- Meta de negocio: ${objective || 'crecer y vender'}
+- Arquetipo/voz: ${v.arquetipo}
+- Temas pilares: ${v.temas_pilares?.join(', ')}
+- Le habla a: ${v.audiencia}
+- Plataformas/estilo: ${v.formato_tipico}
+
+FOCO DE ESTA SEMANA: ${p.focus || 'mezcla equilibrada de crecimiento + venta + conexión'}
+
+DISEÑA UN PLAN DE ${n} PIEZAS para la semana. Reglas:
+1. Variedad de objetivos: mezcla piezas de CRECER (alcance), VENDER (al producto del creador) y CONECTAR/EDUCAR. No todo es venta.
+2. Variedad de formatos (Reel, Carrusel, Historia, Post) y plataformas según donde vive su audiencia.
+3. Cada ángulo debe ser específico y ligado a sus temas pilares — nada genérico.
+4. Distribución inteligente en la semana (no 3 ventas seguidas).
+5. La "categoria" DEBE ser una de estas exactas: ${CATEGORIAS_VALIDAS.join(', ')}.
+
+Responde ÚNICAMENTE con un array JSON válido (sin texto antes ni después, sin markdown), de ${n} objetos con este esquema exacto:
+
+[
+  {
+    "dia": "Lunes",
+    "plataforma": "Instagram | TikTok | LinkedIn | YouTube",
+    "formato": "Reel | Carrusel | Historia | Post",
+    "categoria": "una de: ${CATEGORIAS_VALIDAS.join(' / ')}",
+    "titulo": "ángulo/título concreto de la pieza",
+    "hook": "el gancho de los primeros 3 segundos",
+    "objetivo": "Crecer | Vender | Educar | Conectar",
+    "notas": "1 línea de por qué esta pieza este día"
+  }
+]`
+}
+
+function parsePlan(raw: string): PlanItem[] {
+  let cleaned = raw.trim()
+  const fence = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/)
+  if (fence) cleaned = fence[1].trim()
+  const first = cleaned.indexOf('[')
+  const last = cleaned.lastIndexOf(']')
+  if (first !== -1 && last !== -1) cleaned = cleaned.slice(first, last + 1)
+  const parsed = JSON.parse(cleaned) as PlanItem[]
+  if (!Array.isArray(parsed) || parsed.length === 0) {
+    throw new Error('El plan devuelto no es una lista válida.')
+  }
+  return parsed
 }
 
 type RouteClient = Awaited<ReturnType<typeof createRouteClient>>
@@ -326,6 +405,67 @@ export async function POST(request: NextRequest) {
 
         const post = message.content[0].type === 'text' ? message.content[0].text : ''
         return NextResponse.json({ post })
+      }
+
+      case 'plan-semanal': {
+        const p = body as PlanSemanalPayload
+
+        const supabase = await createRouteClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          return NextResponse.json({ error: 'Debes iniciar sesión.' }, { status: 401 })
+        }
+
+        const { data: voiceRow } = await supabase
+          .from('creator_voice')
+          .select('voice_profile, niche, objective')
+          .eq('user_id', user.id)
+          .maybeSingle()
+
+        if (!voiceRow?.voice_profile) {
+          return NextResponse.json(
+            { error: 'Primero extrae tu voz (arriba) para armar tu plan.' },
+            { status: 409 }
+          )
+        }
+
+        const usage = await checkAndLogUsage(supabase, user.id, 'plan-semanal')
+        if (!usage.allowed) {
+          return NextResponse.json(
+            { error: `Llegaste al límite de ${usage.limit} planes por día. Vuelve mañana. 🙌` },
+            { status: 429 }
+          )
+        }
+
+        const message = await client.messages.create({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 2500,
+          messages: [
+            {
+              role: 'user',
+              content: buildPlanSemanalPrompt(
+                voiceRow.voice_profile as VoiceProfile,
+                p,
+                voiceRow.niche ?? null,
+                voiceRow.objective ?? null
+              ),
+            },
+          ],
+        })
+
+        const text = message.content[0].type === 'text' ? message.content[0].text : ''
+        let plan: PlanItem[]
+        try {
+          plan = parsePlan(text)
+        } catch (e) {
+          console.error('No se pudo parsear el plan:', e)
+          return NextResponse.json(
+            { error: 'No pude estructurar el plan esta vez. Intenta de nuevo.' },
+            { status: 502 }
+          )
+        }
+
+        return NextResponse.json({ plan })
       }
 
       default:

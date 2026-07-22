@@ -5,7 +5,10 @@ import {
   FileVideo,
   Calendar,
   Lightbulb,
+  Gift,
+  ListChecks,
   Wallet,
+  BarChart3,
   Briefcase,
   Link2,
   FileUser,
@@ -26,13 +29,13 @@ import { cn } from '@/lib/utils'
 
 export type Section =
   | 'dashboard'
-  | 'contenido'
+  | 'colaboraciones'
+  | 'prs'
   | 'calendario'
+  | 'tareas'
   | 'ideas'
   | 'ingresos'
-  | 'finanzas'
-  | 'marcas'
-  | 'afiliados'
+  | 'metricas'
 
 interface NavItem {
   id: Section
@@ -41,13 +44,14 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { id: 'dashboard',  label: 'Dashboard',  icon: LayoutDashboard },
-  { id: 'contenido',  label: 'Contenido',  icon: FileVideo },
-  { id: 'calendario', label: 'Calendario', icon: Calendar },
-  { id: 'ideas',      label: 'Ideas',      icon: Lightbulb },
-  { id: 'finanzas',   label: 'Finanzas',   icon: Wallet },
-  { id: 'marcas',     label: 'Marcas',     icon: Briefcase },
-  { id: 'afiliados',  label: 'Afiliados',  icon: Link2 },
+  { id: 'dashboard',      label: 'Dashboard',      icon: LayoutDashboard },
+  { id: 'colaboraciones', label: 'Colaboraciones', icon: Briefcase },
+  { id: 'prs',            label: 'PRs',            icon: Gift },
+  { id: 'calendario',     label: 'Calendario',     icon: Calendar },
+  { id: 'tareas',         label: 'Tareas',         icon: ListChecks },
+  { id: 'ideas',          label: 'Ideas',          icon: Lightbulb },
+  { id: 'ingresos',       label: 'Ingresos',       icon: Wallet },
+  { id: 'metricas',       label: 'Métricas',       icon: BarChart3 },
 ]
 
 interface SidebarProps {
@@ -120,31 +124,7 @@ export function Sidebar({
         })}
 
         {/* Routed pages (no son secciones SPA) */}
-        <button
-          onClick={() => router.push('/stanley')}
-          title={isCollapsed ? 'Content Coach' : undefined}
-          className={cn(
-            'w-full flex items-center rounded-lg text-sm font-medium transition-all duration-150',
-            isCollapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2.5',
-            'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
-          )}
-        >
-          <Sparkles className="w-4 h-4 shrink-0 text-indigo-500" />
-          {!isCollapsed && <span className="whitespace-nowrap">Content Coach</span>}
-        </button>
 
-        <button
-          onClick={() => router.push('/tiktok-shop')}
-          title={isCollapsed ? 'Script UGC' : undefined}
-          className={cn(
-            'w-full flex items-center rounded-lg text-sm font-medium transition-all duration-150',
-            isCollapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2.5',
-            'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
-          )}
-        >
-          <Clapperboard className="w-4 h-4 shrink-0 text-zinc-500 dark:text-zinc-500" />
-          {!isCollapsed && <span className="whitespace-nowrap">Script UGC</span>}
-        </button>
 
         <button
           onClick={() => router.push('/mediakit')}

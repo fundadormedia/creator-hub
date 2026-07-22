@@ -5,7 +5,10 @@ import {
   FileVideo,
   Calendar,
   Lightbulb,
+  Gift,
+  ListChecks,
   Wallet,
+  BarChart3,
   Briefcase,
   Link2,
   FileUser,
@@ -40,17 +43,16 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { id: 'dashboard',  label: 'Dashboard',   icon: LayoutDashboard, href: '/', spaSection: 'dashboard' },
-  { id: 'stanley',    label: 'Content Coach', icon: Sparkles,      href: '/stanley' },
-  { id: 'perfil',     label: 'Perfil',      icon: User,            href: '/perfil' },
-  { id: 'contenido',  label: 'Contenido',   icon: FileVideo,       href: '/', spaSection: 'contenido' },
-  { id: 'calendario', label: 'Calendario',  icon: Calendar,        href: '/', spaSection: 'calendario' },
-  { id: 'ideas',       label: 'Ideas',        icon: Lightbulb, href: '/', spaSection: 'ideas' },
-  { id: 'tiktok-shop', label: 'Script UGC',  icon: Clapperboard, href: '/tiktok-shop' },
-  { id: 'finanzas',   label: 'Finanzas',    icon: Wallet,          href: '/', spaSection: 'finanzas' },
-  { id: 'marcas',     label: 'Marcas',      icon: Briefcase,       href: '/', spaSection: 'marcas' },
-  { id: 'mediakit',   label: 'Media Kit',   icon: FileUser,        href: '/mediakit' },
-  { id: 'afiliados',  label: 'Afiliados',   icon: Link2,           href: '/', spaSection: 'afiliados' },
+  { id: 'dashboard',      label: 'Dashboard',      icon: LayoutDashboard, href: '/', spaSection: 'dashboard' },
+  { id: 'colaboraciones', label: 'Colaboraciones', icon: Briefcase,       href: '/', spaSection: 'colaboraciones' },
+  { id: 'prs',            label: 'PRs',            icon: Gift,            href: '/', spaSection: 'prs' },
+  { id: 'calendario',     label: 'Calendario',     icon: Calendar,        href: '/', spaSection: 'calendario' },
+  { id: 'tareas',         label: 'Tareas',         icon: ListChecks,      href: '/', spaSection: 'tareas' },
+  { id: 'ideas',          label: 'Ideas',          icon: Lightbulb,       href: '/', spaSection: 'ideas' },
+  { id: 'ingresos',       label: 'Ingresos',       icon: Wallet,          href: '/', spaSection: 'ingresos' },
+  { id: 'metricas',       label: 'Métricas',       icon: BarChart3,       href: '/', spaSection: 'metricas' },
+  { id: 'mediakit',       label: 'Media Kit',      icon: FileUser,        href: '/mediakit' },
+  { id: 'perfil',         label: 'Perfil',         icon: User,            href: '/perfil' },
 ]
 
 // ─── Props ────────────────────────────────────────────────────────────────────

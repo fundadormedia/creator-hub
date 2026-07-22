@@ -3,31 +3,32 @@
 import { useState, useEffect } from 'react'
 import { Sidebar, type Section } from './sidebar'
 import { DashboardView } from '@/components/dashboard/dashboard-view'
-import { ContentView } from '@/components/content/content-view'
+import { CollaborationsView } from '@/components/collaborations/collaborations-view'
+import { PrsView } from '@/components/prs/prs-view'
 import { CalendarView } from '@/components/calendar/calendar-view'
+import { TasksView } from '@/components/tasks/tasks-view'
 import { IdeasView } from '@/components/ideas/ideas-view'
 import { IncomeView } from '@/components/income/income-view'
-import { FinancesView } from '@/components/finances/finances-view'
-import { BrandsView } from '@/components/brands/brands-view'
-import { AffiliatesView } from '@/components/affiliates/affiliates-view'
+import { MetricsView } from '@/components/metrics/metrics-view'
+import { ManagerWidget } from '@/components/coach/manager-widget'
 import { cn } from '@/lib/utils'
 
 function SectionContent({ section }: { section: Section }) {
   switch (section) {
-    case 'dashboard':  return <DashboardView />
-    case 'contenido':  return <ContentView />
-    case 'calendario': return <CalendarView />
-    case 'ideas':      return <IdeasView />
-    case 'ingresos':   return <IncomeView />
-    case 'finanzas':   return <FinancesView />
-    case 'marcas':     return <BrandsView />
-    case 'afiliados':  return <AffiliatesView />
+    case 'dashboard':      return <DashboardView />
+    case 'colaboraciones': return <CollaborationsView />
+    case 'prs':            return <PrsView />
+    case 'calendario':     return <CalendarView />
+    case 'tareas':         return <TasksView />
+    case 'ideas':          return <IdeasView />
+    case 'ingresos':       return <IncomeView />
+    case 'metricas':       return <MetricsView />
     default:           return <DashboardView />
   }
 }
 
 const VALID_SECTIONS: Section[] = [
-  'dashboard','contenido','calendario','ideas','ingresos','finanzas','marcas','afiliados',
+  'dashboard','colaboraciones','prs','calendario','tareas','ideas','ingresos','metricas',
 ]
 
 export function MainLayout() {
@@ -70,6 +71,7 @@ export function MainLayout() {
       >
         <SectionContent section={activeSection} />
       </main>
+      <ManagerWidget />
     </div>
   )
 }

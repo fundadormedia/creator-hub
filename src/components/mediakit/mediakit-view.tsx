@@ -1,5 +1,7 @@
 'use client'
 
+import { CapturasAnalyzer } from './capturas-analyzer'
+import { CreatorProfileCard } from './creator-profile-card'
 import {
   LineChart,
   Line,
@@ -398,6 +400,12 @@ export function MediaKitView() {
           )
         })}
       </div>
+
+      {/* ── Capturas del mes → métricas con IA ──────────────────────────────── */}
+      <CapturasAnalyzer />
+
+      {/* ── Perfil del creador ──────────────────────────────────────────────── */}
+      <CreatorProfileCard />
 
       {/* ── Plataformas ─────────────────────────────────────────────────────── */}
       <section>

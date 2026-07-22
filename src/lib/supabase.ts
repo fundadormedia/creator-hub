@@ -120,3 +120,57 @@ export function transformIncomeToChart(incomes: Income[]): IncomeChartData[] {
     .sort((a, b) => (a.year !== b.year ? a.year - b.year : a.monthIdx - b.monthIdx))
     .map((e) => e.data)
 }
+
+// ---------- Colaboraciones 2.0 (migración 008) ----------
+
+export type CollabStatus = 'pendiente' | 'activa' | 'completada'
+
+export type DeliverableFormat =
+  | 'reel'
+  | 'story'
+  | 'post'
+  | 'tiktok'
+  | 'yt_short'
+  | 'yt_video'
+  | 'evento'
+
+export const DELIVERABLE_LABELS: Record<DeliverableFormat, string> = {
+  reel: 'Reel',
+  story: 'Story',
+  post: 'Post',
+  tiktok: 'TikTok',
+  yt_short: 'Short de YouTube',
+  yt_video: 'Video de YouTube',
+  evento: 'Asistencia a evento',
+}
+
+export interface Collaboration {
+  id: string
+  brand_name: string
+  status: CollabStatus
+  currency: string
+  total_amount: number
+  is_barter: boolean
+  close_month: string | null
+  payment_terms_days: number
+  has_exclusivity: boolean
+  notes: string | null
+  created_at: string
+}
+
+export interface CollaborationInstallment {
+  id: string
+  collaboration_id: string
+  sequence: number
+  amount: number
+  due_date: string | null
+  paid_at: string | null
+}
+
+export interface CollaborationDeliverable {
+  id: string
+  collaboration_id: string
+  format: DeliverableFormat
+  quantity: number
+  delivered_count: number
+}

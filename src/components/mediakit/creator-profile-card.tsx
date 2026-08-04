@@ -64,19 +64,37 @@ export function CreatorProfileCard() {
       })
   }, [])
 
+  // Reduce cualquier foto a un cuadrado de 512px y la comprime a JPEG.
+  // Así una foto de 5 MB queda en decenas de KB — el usuario no hace nada.
   function handleAvatar(file: File) {
     if (!file.type.startsWith('image/')) {
       setError('La foto debe ser una imagen.')
       return
     }
-    // Se guarda embebida en la fila del perfil, así que conviene mantenerla chica.
-    if (file.size > 700 * 1024) {
-      setError('La foto debe pesar menos de 700 KB.')
-      return
-    }
     setError(null)
     const reader = new FileReader()
-    reader.onload = () => setAvatar(String(reader.result))
+    reader.onload = () => {
+      const img = new Image()
+      img.onload = () => {
+        const size = 512
+        const canvas = document.createElement('canvas')
+        canvas.width = size
+        canvas.height = size
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          setAvatar(String(reader.result))
+          return
+        }
+        // Recorte cuadrado centrado.
+        const min = Math.min(img.width, img.height)
+        const sx = (img.width - min) / 2
+        const sy = (img.height - min) / 2
+        ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size)
+        setAvatar(canvas.toDataURL('image/jpeg', 0.85))
+      }
+      img.onerror = () => setError('No pude leer esa imagen. Prueba con otra.')
+      img.src = String(reader.result)
+    }
     reader.readAsDataURL(file)
   }
 

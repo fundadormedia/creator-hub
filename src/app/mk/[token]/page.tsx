@@ -2,7 +2,8 @@
 
 import { use, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Users, Eye, TrendingUp } from 'lucide-react'
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
+import { Users, Eye, TrendingUp, MapPin, BarChart3 } from 'lucide-react'
 
 // Media kit PÚBLICO — sin login. Cualquiera con el link lo ve.
 // Lee vía la función get_public_mediakit (solo campos públicos).
@@ -222,59 +223,132 @@ export default function PublicMediaKit({ params }: { params: Promise<{ token: st
         {kit.audience && (kit.audience.gender.male !== null || kit.audience.countries.some((c) => c.name)) && (
           <div className="mt-6 space-y-3">
             {(kit.audience.gender.male !== null || kit.audience.gender.female !== null) && (
-              <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-                <p className="mb-3 font-semibold text-zinc-900 dark:text-zinc-100">Audiencia por género</p>
-                <div className="flex overflow-hidden rounded-full">
-                  <div className="bg-indigo-500 py-2 text-center text-xs font-semibold text-white" style={{ width: `${kit.audience.gender.male ?? 0}%` }}>
-                    {kit.audience.gender.male !== null ? `${kit.audience.gender.male}%` : ''}
+              <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+                <p className="mb-4 flex items-center gap-2 font-semibold text-zinc-900 dark:text-zinc-100">
+                  <Users className="h-4 w-4 text-indigo-500" /> Audiencia por género
+                </p>
+                <div className="flex items-center justify-around gap-4">
+                  <div className="relative h-40 w-40 shrink-0">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: 'Hombre', value: kit.audience.gender.male ?? 0 },
+                            { name: 'Mujer', value: kit.audience.gender.female ?? 0 },
+                          ]}
+                          dataKey="value"
+                          innerRadius={52}
+                          outerRadius={72}
+                          startAngle={90}
+                          endAngle={-270}
+                          paddingAngle={2}
+                          stroke="none"
+                        >
+                          <Cell fill="#8b5cf6" />
+                          <Cell fill="#f97316" />
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+                        {kit.audience.gender.male ?? 0}%
+                      </span>
+                      <span className="text-xs text-zinc-400">Hombre</span>
+                    </div>
                   </div>
-                  <div className="bg-orange-500 py-2 text-center text-xs font-semibold text-white" style={{ width: `${kit.audience.gender.female ?? 0}%` }}>
-                    {kit.audience.gender.female !== null ? `${kit.audience.gender.female}%` : ''}
+                  <div className="space-y-4">
+                    <div>
+                      <p className="flex items-center gap-1.5 text-sm text-zinc-500">
+                        <span className="h-2.5 w-2.5 rounded-full bg-violet-500" /> Hombre
+                      </p>
+                      <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+                        {kit.audience.gender.male ?? 0}%
+                      </p>
+                    </div>
+                    <div>
+                      <p className="flex items-center gap-1.5 text-sm text-zinc-500">
+                        <span className="h-2.5 w-2.5 rounded-full bg-orange-500" /> Mujer
+                      </p>
+                      <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+                        {kit.audience.gender.female ?? 0}%
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="mt-2 flex justify-between text-xs text-zinc-500">
-                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-indigo-500" />Hombre</span>
-                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-orange-500" />Mujer</span>
                 </div>
               </div>
             )}
 
             {kit.audience.countries.filter((c) => c.name).length > 0 && (
-              <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-                <p className="mb-4 font-semibold text-zinc-900 dark:text-zinc-100">Principales países</p>
-                <div className="space-y-3">
-                  {kit.audience.countries.filter((c) => c.name).map((c, i) => (
-                    <div key={i}>
-                      <div className="mb-1 flex items-center justify-between text-sm">
-                        <span className="text-zinc-700 dark:text-zinc-300">{c.flag} {c.name}</span>
-                        <span className="font-semibold text-zinc-900 dark:text-zinc-100">{c.pct}%</span>
+              <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+                <p className="mb-4 flex items-center gap-2 font-semibold text-zinc-900 dark:text-zinc-100">
+                  <MapPin className="h-4 w-4 text-indigo-500" /> Principales países
+                </p>
+                <div className="space-y-3.5">
+                  {(() => {
+                    const list = kit.audience.countries.filter((c) => c.name)
+                    const max = Math.max(...list.map((c) => c.pct ?? 0), 1)
+                    return list.map((c, i) => (
+                      <div key={i}>
+                        <div className="mb-1 flex items-center justify-between text-sm">
+                          <span className="text-zinc-700 dark:text-zinc-300">
+                            {c.flag} {c.name}
+                          </span>
+                          <span className="font-bold text-zinc-900 dark:text-zinc-100">{c.pct}%</span>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-cyan-400"
+                            style={{ width: `${((c.pct ?? 0) / max) * 100}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="h-1.5 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-                        <div className="h-full rounded-full bg-indigo-500" style={{ width: `${Math.min(100, (c.pct ?? 0) * 3)}%` }} />
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  })()}
                 </div>
               </div>
             )}
 
             {kit.audience.ages.some((a) => a.male !== null || a.female !== null) && (
-              <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-                <p className="mb-4 font-semibold text-zinc-900 dark:text-zinc-100">Edad de la audiencia</p>
-                <div className="space-y-2">
-                  {kit.audience.ages.filter((a) => a.male !== null || a.female !== null).map((a) => {
-                    const total = (a.male ?? 0) + (a.female ?? 0)
-                    return (
-                      <div key={a.range} className="flex items-center gap-3 text-sm">
-                        <span className="w-14 text-zinc-500">{a.range}</span>
-                        <div className="flex h-4 flex-1 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-                          <div className="bg-indigo-500" style={{ width: `${(a.male ?? 0) * 2}%` }} />
-                          <div className="bg-orange-500" style={{ width: `${(a.female ?? 0) * 2}%` }} />
+              <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+                <div className="mb-4 flex items-center justify-between">
+                  <p className="flex items-center gap-2 font-semibold text-zinc-900 dark:text-zinc-100">
+                    <BarChart3 className="h-4 w-4 text-indigo-500" /> Edad de la audiencia
+                  </p>
+                  <div className="flex gap-3 text-xs text-zinc-500">
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-full bg-violet-500" /> Hombre
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-full bg-orange-500" /> Mujer
+                    </span>
+                  </div>
+                </div>
+                <div className="space-y-2.5">
+                  {(() => {
+                    const rows = kit.audience.ages.filter((a) => a.male !== null || a.female !== null)
+                    const max = Math.max(...rows.map((a) => (a.male ?? 0) + (a.female ?? 0)), 1)
+                    return rows.map((a) => {
+                      const total = (a.male ?? 0) + (a.female ?? 0)
+                      return (
+                        <div key={a.range} className="flex items-center gap-3 text-sm">
+                          <span className="w-12 shrink-0 text-zinc-500">{a.range}</span>
+                          <div className="flex h-5 flex-1 overflow-hidden rounded-md bg-zinc-100 dark:bg-zinc-800">
+                            <div
+                              className="bg-violet-500"
+                              style={{ width: `${((a.male ?? 0) / max) * 100}%` }}
+                            />
+                            <div
+                              className="bg-orange-500"
+                              style={{ width: `${((a.female ?? 0) / max) * 100}%` }}
+                            />
+                          </div>
+                          <span className="w-12 shrink-0 text-right font-bold text-zinc-900 dark:text-zinc-100">
+                            {total.toFixed(1)}%
+                          </span>
                         </div>
-                        <span className="w-12 text-right font-semibold text-zinc-900 dark:text-zinc-100">{total.toFixed(1)}%</span>
-                      </div>
-                    )
-                  })}
+                      )
+                    })
+                  })()}
                 </div>
               </div>
             )}

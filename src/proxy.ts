@@ -34,6 +34,7 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/public/') ||
     pathname.startsWith('/mk/') ||
     pathname.startsWith('/auth/') ||
+    pathname.startsWith('/api/webhooks/') ||
     pathname === '/reset-password' ||
     authPages.includes(pathname)
   ) {

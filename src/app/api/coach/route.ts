@@ -21,8 +21,13 @@ const MODES: Record<Mode, string> = {
     'Estás en modo RECOMIENDA. Propones el siguiente paso concreto: qué crear, a qué marca escribir, qué dejar de hacer. Una recomendación clara por respuesta, con el porqué.',
 }
 
-// Límite diario de mensajes (protege los créditos de Anthropic).
-const DAILY_LIMIT = 40
+// Límite diario de mensajes por tier (protege los créditos de Anthropic).
+// Fase de prueba: free generoso (40) para maximizar enganche y datos.
+// Cuando se encienda el paywall, bajar free a 5. pro: sin tope práctico.
+const DAILY_LIMITS: Record<'free' | 'pro', number> = {
+  free: 40,
+  pro: 200,
+}
 
 interface ChatMessage {
   role: 'user' | 'assistant'
@@ -69,11 +74,15 @@ async function buildUserContext(supabase: RouteClient): Promise<string> {
   ].join('\n\n')
 }
 
-// Verifica el límite diario y, si hay cupo, registra el uso.
+// Verifica el límite diario según el tier y, si hay cupo, registra el uso.
 async function checkAndLogUsage(
   supabase: RouteClient,
   userId: string
 ): Promise<{ allowed: boolean; limit: number }> {
+  const { data: profile } = await supabase.from('profiles').select('plan').maybeSingle()
+  const plan = profile?.plan === 'pro' ? 'pro' : 'free'
+  const limit = DAILY_LIMITS[plan]
+
   const startOfDay = new Date()
   startOfDay.setHours(0, 0, 0, 0)
 
@@ -83,10 +92,10 @@ async function checkAndLogUsage(
     .eq('action', 'chat')
     .gte('created_at', startOfDay.toISOString())
 
-  if ((count ?? 0) >= DAILY_LIMIT) return { allowed: false, limit: DAILY_LIMIT }
+  if ((count ?? 0) >= limit) return { allowed: false, limit }
 
   await supabase.from('coach_usage').insert({ user_id: userId, action: 'chat' })
-  return { allowed: true, limit: DAILY_LIMIT }
+  return { allowed: true, limit }
 }
 
 function buildSystemPrompt(mode: Mode, userContext: string): string {
@@ -156,7 +165,7 @@ export async function POST(request: NextRequest) {
 
     const client = new Anthropic({ apiKey })
     const message = await client.messages.create({
-      model: 'claude-opus-4-8',
+      model: 'claude-sonnet-5',
       max_tokens: 2000,
       system: [
         {

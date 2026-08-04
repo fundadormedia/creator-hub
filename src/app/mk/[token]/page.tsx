@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
-import { Users, Eye, TrendingUp, MapPin, BarChart3 } from 'lucide-react'
+import { Users, Eye, TrendingUp, MapPin, BarChart3, Film, ExternalLink } from 'lucide-react'
 
 // Media kit PÚBLICO — sin login. Cualquiera con el link lo ve.
 // Lee vía la función get_public_mediakit (solo campos públicos).
@@ -48,6 +48,7 @@ interface Kit {
     countries: { name: string; flag: string; pct: number | null }[]
     ages: { range: string; male: number | null; female: number | null }[]
   } | null
+  portfolio: { url: string; title: string }[] | null
 }
 
 function compact(n: number | null): string {
@@ -352,6 +353,31 @@ export default function PublicMediaKit({ params }: { params: Promise<{ token: st
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Videos destacados */}
+        {kit.portfolio && kit.portfolio.filter((v) => v.url).length > 0 && (
+          <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+            <p className="mb-4 flex items-center gap-2 font-semibold text-zinc-900 dark:text-zinc-100">
+              <Film className="h-4 w-4 text-indigo-500" /> Videos destacados
+            </p>
+            <div className="space-y-2">
+              {kit.portfolio.filter((v) => v.url).map((v, i) => (
+                <a
+                  key={i}
+                  href={v.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 px-4 py-3 transition-colors hover:border-indigo-400 hover:bg-indigo-50/50 dark:border-zinc-700 dark:hover:bg-indigo-500/5"
+                >
+                  <span className="truncate text-sm text-zinc-700 dark:text-zinc-300">
+                    {v.title || v.url}
+                  </span>
+                  <ExternalLink className="h-4 w-4 shrink-0 text-indigo-500" />
+                </a>
+              ))}
+            </div>
           </div>
         )}
 

@@ -32,6 +32,7 @@ export async function proxy(request: NextRequest) {
   // Public routes — no auth needed
   if (
     pathname.startsWith('/public/') ||
+    pathname.startsWith('/mk/') ||
     pathname.startsWith('/auth/') ||
     pathname === '/reset-password' ||
     authPages.includes(pathname)

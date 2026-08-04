@@ -3,6 +3,7 @@
 import { CapturasAnalyzer } from '@/components/mediakit/capturas-analyzer'
 import { CreatorProfileCard } from '@/components/mediakit/creator-profile-card'
 import { AudienceCard } from '@/components/mediakit/audience-card'
+import { PortfolioCard } from '@/components/mediakit/portfolio-card'
 import { ShareMediaKit } from '@/components/mediakit/share-mediakit'
 
 // ============================================================
@@ -34,6 +35,8 @@ export default function MediaKitPage() {
       <CreatorProfileCard />
 
       <AudienceCard />
+
+      <PortfolioCard />
     </div>
   )
 }

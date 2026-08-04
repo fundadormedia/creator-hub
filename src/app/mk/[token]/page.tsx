@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
-import { Users, Eye, TrendingUp, MapPin, BarChart3, Film, ExternalLink, Mail, MessageCircle } from 'lucide-react'
+import { Users, Eye, TrendingUp, MapPin, BarChart3, Film, Play, Mail, MessageCircle } from 'lucide-react'
 
 // Media kit PÚBLICO — sin login. Cualquiera con el link lo ve.
 // Lee vía la función get_public_mediakit (solo campos públicos).
@@ -48,7 +48,7 @@ interface Kit {
     countries: { name: string; flag: string; pct: number | null }[]
     ages: { range: string; male: number | null; female: number | null }[]
   } | null
-  portfolio: { url: string; title: string }[] | null
+  portfolio: { url: string; title: string; thumb?: string }[] | null
   contact_email: string | null
   whatsapp: string | null
 }
@@ -61,6 +61,11 @@ function compact(n: number | null): string {
 }
 
 // Arma la URL del perfil a partir del @handle. Escala solo al agregar redes.
+function youtubeThumb(url: string): string | null {
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/)
+  return m ? `https://img.youtube.com/vi/${m[1]}/hqdefault.jpg` : null
+}
+
 function profileUrl(platform: Platform, handle?: string): string | null {
   if (!handle) return null
   const h = handle.trim().replace(/^@/, '')
@@ -406,25 +411,42 @@ export default function PublicMediaKit({ params }: { params: Promise<{ token: st
 
         {/* Videos destacados */}
         {kit.portfolio && kit.portfolio.filter((v) => v.url).length > 0 && (
-          <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-            <p className="mb-4 flex items-center gap-2 font-semibold text-zinc-900 dark:text-zinc-100">
+          <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+            <p className="mb-5 flex items-center gap-2 font-semibold text-zinc-900 dark:text-zinc-100">
               <Film className="h-4 w-4 text-indigo-500" /> Videos destacados
             </p>
-            <div className="space-y-2">
-              {kit.portfolio.filter((v) => v.url).map((v, i) => (
-                <a
-                  key={i}
-                  href={v.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 px-4 py-3 transition-colors hover:border-indigo-400 hover:bg-indigo-50/50 dark:border-zinc-700 dark:hover:bg-indigo-500/5"
-                >
-                  <span className="truncate text-sm text-zinc-700 dark:text-zinc-300">
-                    {v.title || v.url}
-                  </span>
-                  <ExternalLink className="h-4 w-4 shrink-0 text-indigo-500" />
-                </a>
-              ))}
+            <div className="grid grid-cols-2 gap-4">
+              {kit.portfolio.filter((v) => v.url).map((v, i) => {
+                const thumb = v.thumb || youtubeThumb(v.url)
+                return (
+                  <a
+                    key={i}
+                    href={v.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group"
+                  >
+                    <div className="relative aspect-[3/4] overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800">
+                      {thumb ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={thumb} alt={v.title || 'Video'} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                      ) : (
+                        <div className="h-full w-full bg-gradient-to-br from-indigo-500 to-cyan-400" />
+                      )}
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/25 transition-colors group-hover:bg-black/10">
+                        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-lg">
+                          <Play className="h-5 w-5 fill-indigo-600 text-indigo-600" />
+                        </span>
+                      </span>
+                    </div>
+                    {v.title && (
+                      <p className="mt-2 truncate text-center text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                        {v.title}
+                      </p>
+                    )}
+                  </a>
+                )
+              })}
             </div>
           </div>
         )}

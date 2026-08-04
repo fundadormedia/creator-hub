@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 
 // Publica el media kit y da el link para compartir con marcas.
 export function ShareMediaKit() {
+  const [userId, setUserId] = useState<string | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [isPublic, setIsPublic] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -15,6 +16,7 @@ export function ShareMediaKit() {
 
   useEffect(() => {
     setOrigin(window.location.origin)
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null))
     supabase
       .from('profiles')
       .select('mk_share_token, mk_public')
@@ -30,10 +32,24 @@ export function ShareMediaKit() {
 
   const link = token ? `${origin}/mk/${token}` : ''
 
+  // Token aleatorio y limpio para URL, por si la fila es nueva y no lo tiene.
+  function newToken() {
+    return Array.from(crypto.getRandomValues(new Uint8Array(9)))
+      .map((b) => b.toString(36))
+      .join('')
+      .slice(0, 12)
+  }
+
   async function togglePublic() {
+    if (!userId) return
     const next = !isPublic
+    const ensuredToken = token ?? newToken()
     setIsPublic(next)
-    await supabase.from('profiles').update({ mk_public: next }).not('id', 'is', null)
+    setToken(ensuredToken)
+    await supabase.from('profiles').upsert(
+      { user_id: userId, mk_public: next, mk_share_token: ensuredToken },
+      { onConflict: 'user_id' }
+    )
   }
 
   function copy() {

@@ -103,10 +103,13 @@ export function ManagerWidget() {
   const currentQuestion = ONBOARDING[step]
 
   async function finishOnboarding(finalAnswers: Record<string, string>) {
-    await supabase
-      .from('profiles')
-      .update({ manager_profile: finalAnswers, manager_onboarded: true })
-      .not('id', 'is', null)
+    const { data: u } = await supabase.auth.getUser()
+    if (u.user) {
+      await supabase.from('profiles').upsert(
+        { user_id: u.user.id, manager_profile: finalAnswers, manager_onboarded: true },
+        { onConflict: 'user_id' }
+      )
+    }
     setOnboarded(true)
     setMessages((prev) => [
       ...prev,

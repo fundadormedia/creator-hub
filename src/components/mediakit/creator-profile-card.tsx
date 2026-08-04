@@ -36,6 +36,7 @@ export function CreatorProfileCard() {
     youtube: emptySocial(),
   })
 
+  const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -43,6 +44,7 @@ export function CreatorProfileCard() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null))
     supabase
       .from('profiles')
       .select('full_name, bio, avatar_url, mk_categories, mk_socials')
@@ -119,20 +121,26 @@ export function CreatorProfileCard() {
   }
 
   async function save() {
+    if (!userId) {
+      setError('No pude identificar tu sesión. Recarga la página e intenta de nuevo.')
+      return
+    }
     setSaving(true)
     setError(null)
     setSaved(false)
 
-    const { error: err } = await supabase
-      .from('profiles')
-      .update({
+    // upsert crea la fila si aún no existe (cuentas nuevas no la tienen).
+    const { error: err } = await supabase.from('profiles').upsert(
+      {
+        user_id: userId,
         full_name: fullName.trim() || null,
         bio: bio.trim() || null,
         avatar_url: avatar,
         mk_categories: categories,
         mk_socials: socials,
-      })
-      .not('id', 'is', null)
+      },
+      { onConflict: 'user_id' }
+    )
 
     setSaving(false)
     if (err) {

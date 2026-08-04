@@ -44,26 +44,32 @@ export function CreatorProfileCard() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null))
-    supabase
-      .from('profiles')
-      .select('full_name, bio, avatar_url, mk_categories, mk_socials')
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) {
-          setFullName(data.full_name ?? '')
-          setBio(data.bio ?? '')
-          setAvatar(data.avatar_url ?? null)
-          setCategories(Array.isArray(data.mk_categories) ? data.mk_categories : [])
-          const s = (data.mk_socials ?? {}) as Partial<Record<Network, Social>>
-          setSocials({
-            instagram: { ...emptySocial(), ...s.instagram },
-            tiktok: { ...emptySocial(), ...s.tiktok },
-            youtube: { ...emptySocial(), ...s.youtube },
-          })
-        }
+    supabase.auth.getUser().then(async ({ data }) => {
+      const uid = data.user?.id ?? null
+      setUserId(uid)
+      if (!uid) {
         setLoading(false)
-      })
+        return
+      }
+      const { data: row } = await supabase
+        .from('profiles')
+        .select('full_name, bio, avatar_url, mk_categories, mk_socials')
+        .eq('user_id', uid)
+        .maybeSingle()
+      if (row) {
+        setFullName(row.full_name ?? '')
+        setBio(row.bio ?? '')
+        setAvatar(row.avatar_url ?? null)
+        setCategories(Array.isArray(row.mk_categories) ? row.mk_categories : [])
+        const s = (row.mk_socials ?? {}) as Partial<Record<Network, Social>>
+        setSocials({
+          instagram: { ...emptySocial(), ...s.instagram },
+          tiktok: { ...emptySocial(), ...s.tiktok },
+          youtube: { ...emptySocial(), ...s.youtube },
+        })
+      }
+      setLoading(false)
+    })
   }, [])
 
   // Reduce cualquier foto a un cuadrado de 512px y la comprime a JPEG.

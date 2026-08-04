@@ -29,12 +29,19 @@ export async function proxy(request: NextRequest) {
 
   const authPages = ['/login', '/register', '/forgot-password']
 
+  // Landing pública en la raíz para quien no ha iniciado sesión.
+  // Los usuarios con sesión ven su dashboard (cae al flujo normal de abajo).
+  if (!user && pathname === '/') {
+    return NextResponse.rewrite(new URL('/landing', request.url))
+  }
+
   // Public routes — no auth needed
   if (
     pathname.startsWith('/public/') ||
     pathname.startsWith('/mk/') ||
     pathname.startsWith('/auth/') ||
     pathname.startsWith('/api/webhooks/') ||
+    pathname.startsWith('/landing') ||
     pathname === '/reset-password' ||
     authPages.includes(pathname)
   ) {

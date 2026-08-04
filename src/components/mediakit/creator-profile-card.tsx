@@ -35,6 +35,8 @@ export function CreatorProfileCard() {
     tiktok: emptySocial(),
     youtube: emptySocial(),
   })
+  const [contactEmail, setContactEmail] = useState('')
+  const [whatsapp, setWhatsapp] = useState('')
 
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -53,7 +55,7 @@ export function CreatorProfileCard() {
       }
       const { data: row } = await supabase
         .from('profiles')
-        .select('full_name, bio, avatar_url, mk_categories, mk_socials')
+        .select('full_name, bio, avatar_url, mk_categories, mk_socials, mk_contact_email, mk_whatsapp')
         .eq('user_id', uid)
         .maybeSingle()
       if (row) {
@@ -61,6 +63,8 @@ export function CreatorProfileCard() {
         setBio(row.bio ?? '')
         setAvatar(row.avatar_url ?? null)
         setCategories(Array.isArray(row.mk_categories) ? row.mk_categories : [])
+        setContactEmail(row.mk_contact_email ?? '')
+        setWhatsapp(row.mk_whatsapp ?? '')
         const s = (row.mk_socials ?? {}) as Partial<Record<Network, Social>>
         setSocials({
           instagram: { ...emptySocial(), ...s.instagram },
@@ -144,6 +148,8 @@ export function CreatorProfileCard() {
         avatar_url: avatar,
         mk_categories: categories,
         mk_socials: socials,
+        mk_contact_email: contactEmail.trim() || null,
+        mk_whatsapp: whatsapp.replace(/[^0-9]/g, '') || null,
       },
       { onConflict: 'user_id' }
     )
@@ -289,6 +295,37 @@ export function CreatorProfileCard() {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Contacto */}
+        <div className="grid gap-5 md:grid-cols-2">
+          <div>
+            <label className="mb-2 block font-medium text-zinc-900 dark:text-zinc-100">
+              Email de contacto
+            </label>
+            <input
+              type="email"
+              value={contactEmail}
+              onChange={(e) => setContactEmail(e.target.value)}
+              placeholder="andre@correo.com"
+              className={INPUT}
+            />
+          </div>
+          <div>
+            <label className="mb-2 block font-medium text-zinc-900 dark:text-zinc-100">
+              WhatsApp
+            </label>
+            <input
+              type="tel"
+              value={whatsapp}
+              onChange={(e) => setWhatsapp(e.target.value)}
+              placeholder="593991234567 (con código de país)"
+              className={INPUT}
+            />
+            <p className="mt-1 text-xs text-zinc-400">
+              Con código de país, sin + ni espacios. Ecuador: 593…
+            </p>
+          </div>
         </div>
 
         {error && (

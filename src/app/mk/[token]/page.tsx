@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
-import { Users, Eye, TrendingUp, MapPin, BarChart3, Film, ExternalLink } from 'lucide-react'
+import { Users, Eye, TrendingUp, MapPin, BarChart3, Film, ExternalLink, Mail, MessageCircle } from 'lucide-react'
 
 // Media kit PÚBLICO — sin login. Cualquiera con el link lo ve.
 // Lee vía la función get_public_mediakit (solo campos públicos).
@@ -49,6 +49,8 @@ interface Kit {
     ages: { range: string; male: number | null; female: number | null }[]
   } | null
   portfolio: { url: string; title: string }[] | null
+  contact_email: string | null
+  whatsapp: string | null
 }
 
 function compact(n: number | null): string {
@@ -423,6 +425,34 @@ export default function PublicMediaKit({ params }: { params: Promise<{ token: st
                   <ExternalLink className="h-4 w-4 shrink-0 text-indigo-500" />
                 </a>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Contacto */}
+        {(kit.contact_email || kit.whatsapp) && (
+          <div className="mt-8 rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-6 text-center dark:border-indigo-500/25 dark:from-indigo-500/10 dark:to-zinc-900">
+            <p className="font-semibold text-zinc-900 dark:text-zinc-100">¿Trabajamos juntos?</p>
+            <p className="mt-1 text-sm text-zinc-500">Escríbeme y armamos la colaboración.</p>
+            <div className="mt-4 flex flex-wrap justify-center gap-3">
+              {kit.contact_email && (
+                <a
+                  href={`mailto:${kit.contact_email}`}
+                  className="flex items-center gap-2 rounded-xl bg-indigo-500 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-600"
+                >
+                  <Mail className="h-4 w-4" /> Contáctame
+                </a>
+              )}
+              {kit.whatsapp && (
+                <a
+                  href={`https://wa.me/${kit.whatsapp}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-600"
+                >
+                  <MessageCircle className="h-4 w-4" /> WhatsApp
+                </a>
+              )}
             </div>
           </div>
         )}

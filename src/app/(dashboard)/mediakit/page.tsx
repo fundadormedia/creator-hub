@@ -2,6 +2,7 @@
 
 import { CapturasAnalyzer } from '@/components/mediakit/capturas-analyzer'
 import { CreatorProfileCard } from '@/components/mediakit/creator-profile-card'
+import { ShareMediaKit } from '@/components/mediakit/share-mediakit'
 
 // ============================================================
 // Media Kit — una sola presentación, no una lista de kits.
@@ -24,6 +25,8 @@ export default function MediaKitPage() {
           capturas mes a mes.
         </p>
       </div>
+
+      <ShareMediaKit />
 
       <CapturasAnalyzer />
 

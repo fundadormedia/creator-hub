@@ -58,6 +58,17 @@ function compact(n: number | null): string {
   return String(n)
 }
 
+// Arma la URL del perfil a partir del @handle. Escala solo al agregar redes.
+function profileUrl(platform: Platform, handle?: string): string | null {
+  if (!handle) return null
+  const h = handle.trim().replace(/^@/, '')
+  if (!h) return null
+  if (platform === 'instagram') return `https://instagram.com/${h}`
+  if (platform === 'tiktok') return `https://tiktok.com/@${h}`
+  if (platform === 'youtube') return `https://youtube.com/@${h}`
+  return null
+}
+
 export default function PublicMediaKit({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params)
   const [kit, setKit] = useState<Kit | null>(null)
@@ -144,6 +155,28 @@ export default function PublicMediaKit({ params }: { params: Promise<{ token: st
               ))}
             </div>
           )}
+
+          {/* Botones a las redes */}
+          {kit.socials && (
+            <div className="mt-5 flex flex-wrap justify-center gap-2">
+              {(['instagram', 'tiktok', 'youtube'] as Platform[]).map((pf) => {
+                const url = profileUrl(pf, kit.socials?.[pf]?.handle)
+                if (!url) return null
+                return (
+                  <a
+                    key={pf}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:border-indigo-400 hover:text-indigo-600 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+                  >
+                    <span className={`h-2 w-2 rounded-full ${PLATFORM_DOT[pf]}`} />
+                    {PLATFORM_LABEL[pf]}
+                  </a>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         {/* Resumen */}
@@ -184,9 +217,22 @@ export default function PublicMediaKit({ params }: { params: Promise<{ token: st
                       <span className={`h-2.5 w-2.5 rounded-full ${PLATFORM_DOT[s.platform]}`} />
                       {PLATFORM_LABEL[s.platform]}
                     </span>
-                    {social?.handle && (
-                      <span className="text-sm text-zinc-400">{social.handle}</span>
-                    )}
+                    {social?.handle &&
+                      (() => {
+                        const url = profileUrl(s.platform, social.handle)
+                        return url ? (
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm font-medium text-indigo-500 hover:text-indigo-600 hover:underline dark:text-indigo-400"
+                          >
+                            {social.handle}
+                          </a>
+                        ) : (
+                          <span className="text-sm text-zinc-400">{social.handle}</span>
+                        )
+                      })()}
                   </div>
                   <div className="mt-4 grid grid-cols-3 gap-4 text-center">
                     <div>

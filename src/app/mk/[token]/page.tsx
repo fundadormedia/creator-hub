@@ -41,6 +41,12 @@ interface Kit {
   categories: string[] | null
   socials: Partial<Record<Platform, Social>> | null
   stats: Stat[]
+  audience: {
+    engagement_rate: number | null
+    gender: { male: number | null; female: number | null }
+    countries: { name: string; flag: string; pct: number | null }[]
+    ages: { range: string; male: number | null; female: number | null }[]
+  } | null
 }
 
 function compact(n: number | null): string {
@@ -210,6 +216,69 @@ export default function PublicMediaKit({ params }: { params: Promise<{ token: st
           <p className="mt-10 text-center text-sm text-zinc-400">
             Este creador todavía no publicó sus métricas.
           </p>
+        )}
+
+        {/* Audiencia */}
+        {kit.audience && (kit.audience.gender.male !== null || kit.audience.countries.some((c) => c.name)) && (
+          <div className="mt-6 space-y-3">
+            {(kit.audience.gender.male !== null || kit.audience.gender.female !== null) && (
+              <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+                <p className="mb-3 font-semibold text-zinc-900 dark:text-zinc-100">Audiencia por género</p>
+                <div className="flex overflow-hidden rounded-full">
+                  <div className="bg-indigo-500 py-2 text-center text-xs font-semibold text-white" style={{ width: `${kit.audience.gender.male ?? 0}%` }}>
+                    {kit.audience.gender.male !== null ? `${kit.audience.gender.male}%` : ''}
+                  </div>
+                  <div className="bg-orange-500 py-2 text-center text-xs font-semibold text-white" style={{ width: `${kit.audience.gender.female ?? 0}%` }}>
+                    {kit.audience.gender.female !== null ? `${kit.audience.gender.female}%` : ''}
+                  </div>
+                </div>
+                <div className="mt-2 flex justify-between text-xs text-zinc-500">
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-indigo-500" />Hombre</span>
+                  <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-orange-500" />Mujer</span>
+                </div>
+              </div>
+            )}
+
+            {kit.audience.countries.filter((c) => c.name).length > 0 && (
+              <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+                <p className="mb-4 font-semibold text-zinc-900 dark:text-zinc-100">Principales países</p>
+                <div className="space-y-3">
+                  {kit.audience.countries.filter((c) => c.name).map((c, i) => (
+                    <div key={i}>
+                      <div className="mb-1 flex items-center justify-between text-sm">
+                        <span className="text-zinc-700 dark:text-zinc-300">{c.flag} {c.name}</span>
+                        <span className="font-semibold text-zinc-900 dark:text-zinc-100">{c.pct}%</span>
+                      </div>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+                        <div className="h-full rounded-full bg-indigo-500" style={{ width: `${Math.min(100, (c.pct ?? 0) * 3)}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {kit.audience.ages.some((a) => a.male !== null || a.female !== null) && (
+              <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+                <p className="mb-4 font-semibold text-zinc-900 dark:text-zinc-100">Edad de la audiencia</p>
+                <div className="space-y-2">
+                  {kit.audience.ages.filter((a) => a.male !== null || a.female !== null).map((a) => {
+                    const total = (a.male ?? 0) + (a.female ?? 0)
+                    return (
+                      <div key={a.range} className="flex items-center gap-3 text-sm">
+                        <span className="w-14 text-zinc-500">{a.range}</span>
+                        <div className="flex h-4 flex-1 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+                          <div className="bg-indigo-500" style={{ width: `${(a.male ?? 0) * 2}%` }} />
+                          <div className="bg-orange-500" style={{ width: `${(a.female ?? 0) * 2}%` }} />
+                        </div>
+                        <span className="w-12 text-right font-semibold text-zinc-900 dark:text-zinc-100">{total.toFixed(1)}%</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         <p className="mt-12 text-center text-xs text-zinc-400">

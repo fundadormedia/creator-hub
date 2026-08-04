@@ -21,13 +21,10 @@ const MODES: Record<Mode, string> = {
     'Estás en modo RECOMIENDA. Propones el siguiente paso concreto: qué crear, a qué marca escribir, qué dejar de hacer. Una recomendación clara por respuesta, con el porqué.',
 }
 
-// Límite diario de mensajes por tier (protege los créditos de Anthropic).
-// Fase de prueba: free generoso (40) para maximizar enganche y datos.
-// Cuando se encienda el paywall, bajar free a 5. pro: sin tope práctico.
-const DAILY_LIMITS: Record<'free' | 'pro', number> = {
-  free: 40,
-  pro: 200,
-}
+// Límite diario de mensajes (protege los créditos de Anthropic).
+// Durante la prueba de 7 días: acceso generoso. Suscrito (pro): sin tope práctico.
+const TRIAL_DAILY_LIMIT = 40
+const PRO_DAILY_LIMIT = 200
 
 interface ChatMessage {
   role: 'user' | 'assistant'
@@ -74,14 +71,26 @@ async function buildUserContext(supabase: RouteClient): Promise<string> {
   ].join('\n\n')
 }
 
-// Verifica el límite diario según el tier y, si hay cupo, registra el uso.
-async function checkAndLogUsage(
-  supabase: RouteClient,
-  userId: string
-): Promise<{ allowed: boolean; limit: number }> {
-  const { data: profile } = await supabase.from('profiles').select('plan').maybeSingle()
-  const plan = profile?.plan === 'pro' ? 'pro' : 'free'
-  const limit = DAILY_LIMITS[plan]
+type AccessResult =
+  | { allowed: true; limit: number }
+  | { allowed: false; reason: 'trial_expired' }
+  | { allowed: false; reason: 'limit'; limit: number }
+
+// Determina el acceso (pro / prueba activa / prueba vencida) y, si hay
+// cupo, registra el uso del día.
+async function checkAndLogUsage(supabase: RouteClient, userId: string): Promise<AccessResult> {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('plan, trial_ends_at')
+    .maybeSingle()
+
+  const isPro = profile?.plan === 'pro'
+  const trialActive = profile?.trial_ends_at ? new Date(profile.trial_ends_at) > new Date() : false
+
+  // Sin suscripción y con la prueba vencida → bloqueado.
+  if (!isPro && !trialActive) return { allowed: false, reason: 'trial_expired' }
+
+  const limit = isPro ? PRO_DAILY_LIMIT : TRIAL_DAILY_LIMIT
 
   const startOfDay = new Date()
   startOfDay.setHours(0, 0, 0, 0)
@@ -92,7 +101,7 @@ async function checkAndLogUsage(
     .eq('action', 'chat')
     .gte('created_at', startOfDay.toISOString())
 
-  if ((count ?? 0) >= limit) return { allowed: false, limit }
+  if ((count ?? 0) >= limit) return { allowed: false, reason: 'limit', limit }
 
   await supabase.from('coach_usage').insert({ user_id: userId, action: 'chat' })
   return { allowed: true, limit }
@@ -149,6 +158,15 @@ export async function POST(request: NextRequest) {
 
     const usage = await checkAndLogUsage(supabase, user.id)
     if (!usage.allowed) {
+      if (usage.reason === 'trial_expired') {
+        return NextResponse.json(
+          {
+            error: 'Tu prueba de 7 días terminó. Suscríbete para seguir usando tu manager.',
+            code: 'trial_expired',
+          },
+          { status: 402 }
+        )
+      }
       return NextResponse.json(
         { error: `Llegaste al límite de ${usage.limit} mensajes por día. Vuelve mañana. 🙌` },
         { status: 429 }

@@ -58,8 +58,8 @@ export async function POST(request: NextRequest) {
       line_items: [{ price: priceId, quantity: 1 }],
       // El webhook mapea por customer, pero guardamos el user_id por seguridad.
       subscription_data: { metadata: { supabase_user_id: user.id } },
-      success_url: `${appUrl()}/planes?checkout=success`,
-      cancel_url: `${appUrl()}/planes?checkout=cancel`,
+      success_url: `${appUrl()}/perfil?checkout=success`,
+      cancel_url: `${appUrl()}/perfil?checkout=cancel`,
       allow_promotion_codes: true,
     })
 

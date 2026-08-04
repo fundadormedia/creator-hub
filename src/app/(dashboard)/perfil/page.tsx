@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useUser } from '@/hooks/use-user'
 import { useRouter } from 'next/navigation'
-import { User, Shield, Camera } from 'lucide-react'
+import { User, Shield, Camera, Sparkles, CreditCard, LifeBuoy, Bell, Loader2, ArrowRight } from 'lucide-react'
 
 const NICHES = ['Tecnología', 'Lifestyle', 'Educación', 'Entretenimiento', 'Negocios', 'Salud', 'Moda', 'Viajes', 'Gaming', 'Otro']
 
@@ -402,13 +402,198 @@ function SecurityTab() {
   )
 }
 
+// ─── Tab 3: Suscripción ───────────────────────────────────────────────────────
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+function SubscriptionTab() {
+  const { user } = useUser()
+  const [plan, setPlan] = useState<'trial' | 'pro' | 'expired'>('trial')
+  const [trialEnds, setTrialEnds] = useState<string | null>(null)
+  const [dailyEmail, setDailyEmail] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [working, setWorking] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    supabase
+      .from('profiles')
+      .select('plan, trial_ends_at, daily_email_enabled')
+      .maybeSingle()
+      .then(({ data }) => {
+        setTrialEnds(data?.trial_ends_at ?? null)
+        setDailyEmail(Boolean(data?.daily_email_enabled))
+        if (data?.plan === 'pro') setPlan('pro')
+        else if (data?.trial_ends_at && new Date(data.trial_ends_at) > new Date()) setPlan('trial')
+        else setPlan('expired')
+        setLoading(false)
+      })
+  }, [])
+
+  async function subscribe() {
+    setWorking(true)
+    setError('')
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cycle: 'monthly' }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'No se pudo iniciar el pago.')
+      window.location.href = data.url
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Algo falló.')
+      setWorking(false)
+    }
+  }
+
+  async function manage() {
+    setWorking(true)
+    setError('')
+    try {
+      const res = await fetch('/api/billing-portal', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'No se pudo abrir el portal.')
+      window.location.href = data.url
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Algo falló.')
+      setWorking(false)
+    }
+  }
+
+  async function toggleDailyEmail() {
+    if (!user) return
+    const next = !dailyEmail
+    setDailyEmail(next)
+    await supabase.from('profiles').update({ daily_email_enabled: next }).eq('user_id', user.id)
+  }
+
+  const badge =
+    plan === 'pro'
+      ? { text: 'Activo', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' }
+      : plan === 'trial'
+      ? { text: 'En período de prueba', cls: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300' }
+      : { text: 'Prueba vencida', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' }
+
+  return (
+    <div className="space-y-8">
+      {error && (
+        <div className="rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+          {error}
+        </div>
+      )}
+
+      {/* Suscripción */}
+      <div>
+        <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-3">Suscripción</h3>
+        <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
+          {loading ? (
+            <div className="h-20 rounded-lg bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
+          ) : (
+            <>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="font-semibold text-zinc-900 dark:text-zinc-100">
+                    Plan Creador · USD 14.99/mes
+                  </div>
+                  <p className="text-sm text-zinc-500 mt-0.5">
+                    {plan === 'pro'
+                      ? 'Tu suscripción está activa.'
+                      : plan === 'trial' && trialEnds
+                      ? `Tu prueba termina el ${formatDate(trialEnds)}.`
+                      : 'Tu prueba de 7 días terminó. Suscríbete para seguir.'}
+                  </p>
+                </div>
+                <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${badge.cls}`}>
+                  {badge.text}
+                </span>
+              </div>
+
+              {plan === 'pro' ? (
+                <button
+                  onClick={manage}
+                  disabled={working}
+                  className="mt-5 inline-flex items-center gap-2 rounded-lg border border-zinc-300 dark:border-zinc-700 px-5 py-2.5 text-sm font-medium text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 disabled:opacity-50"
+                >
+                  {working && <Loader2 className="w-4 h-4 animate-spin" />}
+                  <CreditCard className="w-4 h-4" /> Gestionar suscripción
+                </button>
+              ) : (
+                <button
+                  onClick={subscribe}
+                  disabled={working}
+                  className="mt-5 inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {working ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                  Suscribirme <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Soporte */}
+      <div>
+        <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-3">Soporte</h3>
+        <a
+          href="mailto:soporte@creatorhub.app?subject=Ayuda%20con%20Creator%20Hub"
+          className="flex items-center gap-4 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors"
+        >
+          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
+            <LifeBuoy className="w-5 h-5" />
+          </span>
+          <div>
+            <div className="font-medium text-zinc-900 dark:text-zinc-100">¿Necesitas ayuda?</div>
+            <div className="text-sm text-zinc-500">Escríbenos y te respondemos por email.</div>
+          </div>
+        </a>
+      </div>
+
+      {/* Notificaciones */}
+      <div>
+        <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-3">Notificaciones</h3>
+        <div className="flex items-center justify-between gap-4 border border-zinc-200 dark:border-zinc-800 rounded-xl p-5">
+          <div className="flex items-center gap-4">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
+              <Bell className="w-5 h-5" />
+            </span>
+            <div>
+              <div className="font-medium text-zinc-900 dark:text-zinc-100">Resumen diario por email</div>
+              <div className="text-sm text-zinc-500">Tu manager te manda lo importante del día.</div>
+            </div>
+          </div>
+          <button
+            onClick={toggleDailyEmail}
+            role="switch"
+            aria-checked={dailyEmail}
+            className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+              dailyEmail ? 'bg-indigo-600' : 'bg-zinc-300 dark:bg-zinc-700'
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+                dailyEmail ? 'translate-x-[22px]' : 'translate-x-0.5'
+              }`}
+            />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-type Tab = 'perfil' | 'seguridad'
+type Tab = 'perfil' | 'suscripcion' | 'seguridad'
 
 const tabs: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: 'perfil',     label: 'Mi Perfil',  icon: User   },
-  { id: 'seguridad',  label: 'Seguridad',  icon: Shield },
+  { id: 'perfil',      label: 'Mi Perfil',    icon: User     },
+  { id: 'suscripcion', label: 'Suscripción',  icon: Sparkles },
+  { id: 'seguridad',   label: 'Seguridad',    icon: Shield   },
 ]
 
 export default function PerfilPage() {
@@ -441,8 +626,9 @@ export default function PerfilPage() {
 
       {/* Content */}
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-8">
-        {activeTab === 'perfil'    && <ProfileTab />}
-        {activeTab === 'seguridad' && <SecurityTab />}
+        {activeTab === 'perfil'      && <ProfileTab />}
+        {activeTab === 'suscripcion' && <SubscriptionTab />}
+        {activeTab === 'seguridad'   && <SecurityTab />}
       </div>
     </div>
   )

@@ -14,7 +14,6 @@ import {
   FileUser,
   User,
   Clapperboard,
-  Sparkles,
   Zap,
   ChevronLeft,
   ChevronRight,
@@ -52,7 +51,6 @@ const navItems: NavItem[] = [
   { id: 'ingresos',       label: 'Ingresos',       icon: Wallet,          href: '/', spaSection: 'ingresos' },
   { id: 'metricas',       label: 'Métricas',       icon: BarChart3,       href: '/', spaSection: 'metricas' },
   { id: 'mediakit',       label: 'Media Kit',      icon: FileUser,        href: '/mediakit' },
-  { id: 'planes',         label: 'Planes',         icon: Sparkles,        href: '/planes' },
   { id: 'perfil',         label: 'Perfil',         icon: User,            href: '/perfil' },
 ]
 
@@ -82,7 +80,6 @@ export function RoutingSidebar({ isCollapsed, onToggleCollapse }: RoutingSidebar
 
   function isActive(item: NavItem): boolean {
     if (item.href === '/mediakit') return pathname.startsWith('/mediakit')
-    if (item.href === '/planes') return pathname.startsWith('/planes')
     if (item.href === '/perfil') return pathname.startsWith('/perfil')
     if (item.href === '/tiktok-shop') return pathname.startsWith('/tiktok-shop')
     if (item.href === '/stanley') return pathname.startsWith('/stanley')

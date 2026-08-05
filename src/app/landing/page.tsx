@@ -72,6 +72,7 @@ export default function LandingPage() {
             Creator&nbsp;Hub
           </div>
           <nav className="hidden items-center gap-8 text-sm text-zinc-600 md:flex">
+            <a href="#funciona" className="hover:text-zinc-900">Cómo funciona</a>
             <a href="#funciones" className="hover:text-zinc-900">Funciones</a>
             <a href="#precio" className="hover:text-zinc-900">Precio</a>
             <a href="#faq" className="hover:text-zinc-900">FAQ</a>
@@ -90,51 +91,43 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-16 md:grid-cols-2 md:py-20">
-        <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-sm font-medium text-indigo-700">
-            <Sparkles className="h-4 w-4" /> Construido en público por un creador
-          </div>
-          <h1 className="mt-6 text-5xl font-bold leading-[1.05] tracking-tight md:text-6xl">
-            Tú creas.
-            <br />
-            <span className="text-indigo-600">Tu manager con IA</span> hace lo demás.
-          </h1>
-          <p className="mt-6 max-w-md text-lg text-zinc-600">
-            Negocia con marcas, organiza tus colaboraciones y cobra a tiempo — mientras tú te enfocas
-            en crear. Tu manager digital trabaja con tus números reales.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center gap-4">
-            <Link
-              href="/register"
-              className="group inline-flex items-center gap-2 rounded-full bg-indigo-600 px-7 py-3.5 text-base font-semibold text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-700"
-            >
-              Empieza tus 7 días gratis
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </Link>
-            <span className="text-sm text-zinc-500">Sin tarjeta de crédito</span>
-          </div>
+      {/* Hero — centrado */}
+      <section className="mx-auto max-w-3xl px-6 py-20 text-center md:py-24">
+        <div className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-sm font-medium text-indigo-700">
+          <Sparkles className="h-4 w-4" /> Construido en público por un creador
         </div>
-
-        {/* Showcase rotativo */}
-        <AppShowcase />
+        <h1 className="mt-6 text-5xl font-bold leading-[1.05] tracking-tight md:text-6xl">
+          Tú creas.
+          <br />
+          <span className="text-indigo-600">Tu manager con IA</span> hace lo demás.
+        </h1>
+        <p className="mx-auto mt-6 max-w-xl text-lg text-zinc-600">
+          Negocia con marcas, organiza tus colaboraciones y cobra a tiempo — mientras tú te enfocas
+          en crear. Tu manager digital trabaja con tus números reales.
+        </p>
+        <div className="mt-8 flex flex-col items-center gap-3">
+          <Link
+            href="/register"
+            className="group inline-flex items-center gap-2 rounded-full bg-indigo-600 px-7 py-3.5 text-base font-semibold text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-700"
+          >
+            Empieza tus 7 días gratis
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+          <span className="text-sm text-zinc-500">Sin tarjeta de crédito</span>
+        </div>
       </section>
 
-      {/* Banda oscura con stats */}
-      <section className="bg-indigo-950 py-14 text-white">
-        <div className="mx-auto grid max-w-5xl grid-cols-2 gap-8 px-6 md:grid-cols-4">
-          {[
-            ['155K+', 'audiencia detrás del build'],
-            ['4', 'modos del manager IA'],
-            ['1 link', 'para tu media kit'],
-            ['0', 'campañas sin cobrar'],
-          ].map(([big, small]) => (
-            <div key={small} className="text-center">
-              <div className="text-3xl font-bold">{big}</div>
-              <div className="mt-1 text-xs uppercase tracking-wider text-indigo-300">{small}</div>
-            </div>
-          ))}
+      {/* Mira cómo funciona — pantallas moviéndose */}
+      <section id="funciona" className="border-t border-zinc-100 bg-zinc-50/50 py-20">
+        <div className="mx-auto max-w-2xl px-6 text-center">
+          <h2 className="text-4xl font-bold tracking-tight md:text-5xl">Mira cómo funciona</h2>
+          <p className="mx-auto mt-4 max-w-xl text-lg text-zinc-600">
+            Organiza colaboraciones, controla tus ingresos y cierra mejores deals — todo en un solo
+            lugar.
+          </p>
+        </div>
+        <div className="mx-auto mt-12 max-w-lg px-6">
+          <AppShowcase />
         </div>
       </section>
 
@@ -154,26 +147,6 @@ export default function LandingPage() {
                 <p className="mt-2 text-zinc-600">{f.desc}</p>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Nota del fundador */}
-      <section className="mx-auto max-w-3xl px-6 pb-20">
-        <div className="rounded-3xl border border-indigo-100 bg-indigo-50/50 p-10 md:p-14">
-          <div className="text-sm font-medium uppercase tracking-widest text-indigo-600">Por qué existe</div>
-          <blockquote className="mt-6 text-2xl font-medium leading-snug text-zinc-900 md:text-3xl">
-            “No soy una empresa de software vendiéndote una herramienta. Soy un creador construyendo,
-            en público, lo que yo necesitaba: dejar de regalar mi trabajo y cobrar lo que valgo.”
-          </blockquote>
-          <div className="mt-8 flex items-center gap-3 text-sm text-zinc-500">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-indigo-600 font-bold text-white">
-              A
-            </span>
-            <div>
-              <div className="font-semibold text-zinc-900">Andre · fundador</div>
-              <div>Creador de contenido, construyendo Creator Hub en público</div>
-            </div>
           </div>
         </div>
       </section>
@@ -256,7 +229,7 @@ export default function LandingPage() {
             Creator Hub
           </div>
           <div className="flex items-center gap-6">
-            <a href="#funciones" className="hover:text-zinc-900">Funciones</a>
+            <a href="#funciona" className="hover:text-zinc-900">Cómo funciona</a>
             <a href="#precio" className="hover:text-zinc-900">Precio</a>
             <Link href="/login" className="hover:text-zinc-900">Entrar</Link>
           </div>

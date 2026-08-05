@@ -26,6 +26,7 @@ import { useTheme } from 'next-themes'
 import { useState, useEffect } from 'react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
+import { useUser } from '@/hooks/use-user'
 
 export type Section =
   | 'dashboard'
@@ -72,6 +73,7 @@ export function Sidebar({
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
   const isDark = theme === 'dark'
+  const { displayName, initials, email } = useUser()
 
   return (
     <aside
@@ -193,17 +195,17 @@ export function Sidebar({
         {isCollapsed ? (
           <div className="flex justify-center py-1">
             <Avatar className="w-8 h-8">
-              <AvatarFallback className="bg-indigo-500 text-white text-xs font-bold">CR</AvatarFallback>
+              <AvatarFallback className="bg-indigo-500 text-white text-xs font-bold">{initials || 'U'}</AvatarFallback>
             </Avatar>
           </div>
         ) : (
           <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/60 cursor-pointer transition-colors">
             <Avatar className="w-8 h-8">
-              <AvatarFallback className="bg-indigo-500 text-white text-xs font-bold">CR</AvatarFallback>
+              <AvatarFallback className="bg-indigo-500 text-white text-xs font-bold">{initials || 'U'}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">Creator Pro</p>
-              <p className="text-xs text-zinc-500 truncate">creator@hub.com</p>
+              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">{displayName}</p>
+              <p className="text-xs text-zinc-500 truncate">{email}</p>
             </div>
           </div>
         )}

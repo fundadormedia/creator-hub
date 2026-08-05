@@ -17,8 +17,10 @@ export function useSubscription() {
       .maybeSingle()
       .then(({ data }) => {
         if (!active) return
-        if (data?.plan === 'pro') setStatus('pro')
-        else if (data?.trial_ends_at && new Date(data.trial_ends_at) > new Date()) setStatus('trial')
+        // Sin fila de perfil todavía → no bloquear (usuario recién creado).
+        if (!data) setStatus('trial')
+        else if (data.plan === 'pro') setStatus('pro')
+        else if (data.trial_ends_at && new Date(data.trial_ends_at) > new Date()) setStatus('trial')
         else setStatus('expired')
       })
     return () => {

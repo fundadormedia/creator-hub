@@ -88,7 +88,7 @@ export function Sidebar({
           </div>
           {!isCollapsed && (
             <span className="font-bold text-lg text-zinc-900 dark:text-zinc-100 tracking-tight whitespace-nowrap">
-              Creator Hub
+              Lula
             </span>
           )}
         </div>

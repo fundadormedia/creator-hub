@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Creator Hub",
+  title: "Lula",
   description: "Gestiona tu contenido y monetización como creador digital",
 };
 

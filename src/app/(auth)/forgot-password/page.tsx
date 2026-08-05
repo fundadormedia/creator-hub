@@ -40,7 +40,7 @@ export default function ForgotPasswordPage() {
           <Zap className="w-5 h-5 text-white" />
         </div>
         <span className="font-bold text-xl text-zinc-900 dark:text-zinc-100 tracking-tight">
-          Creator Hub
+          Lula
         </span>
       </div>
 

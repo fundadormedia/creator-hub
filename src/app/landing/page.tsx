@@ -3,7 +3,7 @@ import { ArrowRight, Sparkles, Briefcase, FileText, MessageSquare, Check } from 
 import { AppShowcase } from '@/components/landing/app-showcase'
 
 export const metadata = {
-  title: 'Creator Hub — El manager con IA para creadores que van en serio',
+  title: 'Lula — El manager con IA para creadores que van en serio',
   description:
     'Tu manager con IA negocia con marcas, organiza tus colaboraciones y te dice cuánto cobrar — con tus números reales. Construido en público.',
 }
@@ -69,7 +69,7 @@ export default function LandingPage() {
             <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600 text-white">
               <Sparkles className="h-4 w-4" />
             </span>
-            Creator&nbsp;Hub
+            Lula
           </div>
           <nav className="hidden items-center gap-8 text-sm text-zinc-600 md:flex">
             <a href="#funciona" className="hover:text-zinc-900">Cómo funciona</a>
@@ -99,11 +99,11 @@ export default function LandingPage() {
         <h1 className="mt-6 text-5xl font-bold leading-[1.05] tracking-tight md:text-6xl">
           Tú creas.
           <br />
-          <span className="text-indigo-600">Tu manager con IA</span> hace lo demás.
+          <span className="text-indigo-600">Lula</span> hace lo demás.
         </h1>
         <p className="mx-auto mt-6 max-w-xl text-lg text-zinc-600">
-          Negocia con marcas, organiza tus colaboraciones y cobra a tiempo — mientras tú te enfocas
-          en crear. Tu manager digital trabaja con tus números reales.
+          Lula es tu manager con IA: negocia con marcas, organiza tus colaboraciones y cobra a
+          tiempo — mientras tú te enfocas en crear. Trabaja con tus números reales.
         </p>
         <div className="mt-8 flex flex-col items-center gap-3">
           <Link
@@ -225,14 +225,14 @@ export default function LandingPage() {
             <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-600 text-white">
               <Sparkles className="h-3.5 w-3.5" />
             </span>
-            Creator Hub
+            Lula
           </div>
           <div className="flex items-center gap-6">
             <a href="#funciona" className="hover:text-zinc-900">Cómo funciona</a>
             <a href="#precio" className="hover:text-zinc-900">Precio</a>
             <Link href="/login" className="hover:text-zinc-900">Entrar</Link>
           </div>
-          <div>© {new Date().getFullYear()} Creator Hub</div>
+          <div>© {new Date().getFullYear()} Lula</div>
         </div>
       </footer>
     </div>

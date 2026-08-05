@@ -30,7 +30,7 @@ const ONBOARDING: { key: string; question: string; placeholder: string }[] = [
   {
     key: 'nicho',
     question:
-      '¡Hola! Soy tu manager. Antes de empezar, quiero conocerte mejor. ¿De qué trata tu contenido y cuál es tu nicho?',
+      '¡Hola! Soy Lula, tu manager. Antes de empezar, quiero conocerte mejor. ¿De qué trata tu contenido y cuál es tu nicho?',
     placeholder: 'Ej: Lifestyle, fitness, gastronomía…',
   },
   {
@@ -178,7 +178,7 @@ export function ManagerWidget() {
         className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-3 text-sm font-medium text-white shadow-lg transition-colors hover:bg-indigo-700"
       >
         <Sparkles className="h-4 w-4" />
-        Hablar con tu manager
+        Hablar con Lula
       </button>
     )
   }
@@ -192,7 +192,7 @@ export function ManagerWidget() {
             <Sparkles className="h-5 w-5" />
           </div>
           <div>
-            <p className="font-semibold leading-tight">Tu manager</p>
+            <p className="font-semibold leading-tight">Lula</p>
             <p className="flex items-center gap-1.5 text-xs text-indigo-100">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
               En línea ahora

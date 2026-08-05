@@ -37,7 +37,7 @@ export function TrialBanner() {
             Tu período de prueba terminó.
           </span>{' '}
           <span className="text-amber-700 dark:text-amber-400">
-            Suscríbete para seguir usando Creator Hub.
+            Suscríbete para seguir usando Lula.
           </span>
         </div>
       </div>

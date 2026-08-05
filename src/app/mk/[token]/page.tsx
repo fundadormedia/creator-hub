@@ -480,7 +480,7 @@ export default function PublicMediaKit({ params }: { params: Promise<{ token: st
         )}
 
         <p className="mt-12 text-center text-xs text-zinc-400">
-          Hecho con Creator Hub
+          Hecho con Lula
         </p>
       </div>
     </div>

@@ -111,7 +111,7 @@ export function RoutingSidebar({ isCollapsed, onToggleCollapse, locked = false }
           </div>
           {!isCollapsed && (
             <span className="font-bold text-lg text-zinc-900 dark:text-zinc-100 tracking-tight whitespace-nowrap">
-              Creator Hub
+              Lula
             </span>
           )}
         </div>

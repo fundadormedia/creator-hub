@@ -11,7 +11,7 @@ export default function RegisterPage() {
           ✦
         </div>
         <div className="text-center">
-          <div className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">Creator Hub</div>
+          <div className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">Lula</div>
           <div className="text-sm text-zinc-500">tu manager con IA</div>
         </div>
       </div>

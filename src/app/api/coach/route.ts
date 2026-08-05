@@ -108,7 +108,7 @@ async function checkAndLogUsage(supabase: RouteClient, userId: string): Promise<
 }
 
 function buildSystemPrompt(mode: Mode, userContext: string): string {
-  return `Eres el manager de creación de contenido de este creador dentro de Creator Hub.
+  return `Eres Lula, la manager de creación de contenido de este creador.
 
 Hablas español neutro con tuteo (nunca voseo argentino). Eres directo y concreto: sin relleno, sin "espero que esto te ayude", sin disclaimers.
 

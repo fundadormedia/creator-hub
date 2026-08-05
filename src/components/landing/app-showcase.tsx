@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 
 // Showcase rotativo: muestra pantallas de la app dentro de un marco de navegador,
-// alternando cada pocos segundos (estilo Silvia, con colores Creator Hub).
+// alternando cada pocos segundos (estilo Silvia, con colores Lula).
 
 const CAPTIONS = ['Tu día, organizado', 'Tu manager con IA', 'Controla tus ingresos']
 
@@ -48,7 +48,7 @@ function SlideManager() {
   const modes = ['Finanzas', 'Analiza', 'Negocia', 'Recomienda']
   return (
     <div className="p-6">
-      <div className="text-sm font-bold text-zinc-900">Pregúntale a tu manager</div>
+      <div className="text-sm font-bold text-zinc-900">Pregúntale a Lula</div>
       <div className="mt-3 grid grid-cols-2 gap-2">
         {modes.map((m, idx) => (
           <div
@@ -70,7 +70,7 @@ function SlideManager() {
       </div>
       <div className="mt-3 flex gap-2">
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">
-          M
+          L
         </span>
         <div className="rounded-2xl rounded-bl-sm bg-zinc-100 px-4 py-2.5 text-sm text-zinc-700">
           Incluye 3 cosas: métricas actualizadas, casos con resultados concretos y tus tarifas por
@@ -150,7 +150,7 @@ export function AppShowcase() {
             <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
             <span className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
             <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
-            <span className="ml-3 text-xs text-zinc-400">creatorhub.app</span>
+            <span className="ml-3 text-xs text-zinc-400">uselula.com</span>
           </div>
           {/* slides */}
           <div className="relative h-[440px]">

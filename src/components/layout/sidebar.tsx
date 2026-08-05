@@ -20,6 +20,7 @@ import {
   ChevronRight,
   Sun,
   Moon,
+  Lock,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
@@ -60,6 +61,8 @@ interface SidebarProps {
   onSectionChange: (section: Section) => void
   isCollapsed: boolean
   onToggleCollapse: () => void
+  /** Prueba vencida: bloquea todo menos Perfil */
+  locked?: boolean
 }
 
 export function Sidebar({
@@ -67,6 +70,7 @@ export function Sidebar({
   onSectionChange,
   isCollapsed,
   onToggleCollapse,
+  locked = false,
 }: SidebarProps) {
   const router = useRouter()
   const { theme, setTheme } = useTheme()
@@ -104,12 +108,14 @@ export function Sidebar({
           return (
             <button
               key={item.id}
-              onClick={() => onSectionChange(item.id)}
-              title={isCollapsed ? item.label : undefined}
+              onClick={() => { if (!locked) onSectionChange(item.id) }}
+              title={isCollapsed ? item.label : locked ? 'Suscríbete para desbloquear' : undefined}
               className={cn(
                 'w-full flex items-center rounded-lg text-sm font-medium transition-all duration-150',
                 isCollapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2.5',
-                isActive
+                locked
+                  ? 'text-zinc-400 opacity-40 cursor-not-allowed'
+                  : isActive
                   ? 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30'
                   : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
               )}
@@ -117,10 +123,11 @@ export function Sidebar({
               <Icon
                 className={cn(
                   'w-4 h-4 shrink-0',
-                  isActive ? 'text-indigo-500 dark:text-indigo-400' : 'text-zinc-500 dark:text-zinc-500'
+                  isActive && !locked ? 'text-indigo-500 dark:text-indigo-400' : 'text-zinc-500 dark:text-zinc-500'
                 )}
               />
-              {!isCollapsed && <span className="whitespace-nowrap">{item.label}</span>}
+              {!isCollapsed && <span className="whitespace-nowrap flex-1 text-left">{item.label}</span>}
+              {!isCollapsed && locked && <Lock className="w-3.5 h-3.5 shrink-0 text-zinc-400" />}
             </button>
           )
         })}
@@ -129,16 +136,19 @@ export function Sidebar({
 
 
         <button
-          onClick={() => router.push('/mediakit')}
-          title={isCollapsed ? 'Media Kit' : undefined}
+          onClick={() => { if (!locked) router.push('/mediakit') }}
+          title={isCollapsed ? 'Media Kit' : locked ? 'Suscríbete para desbloquear' : undefined}
           className={cn(
             'w-full flex items-center rounded-lg text-sm font-medium transition-all duration-150',
             isCollapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2.5',
-            'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
+            locked
+              ? 'text-zinc-400 opacity-40 cursor-not-allowed'
+              : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
           )}
         >
           <FileUser className="w-4 h-4 shrink-0 text-zinc-500 dark:text-zinc-500" />
-          {!isCollapsed && <span className="whitespace-nowrap">Media Kit</span>}
+          {!isCollapsed && <span className="whitespace-nowrap flex-1 text-left">Media Kit</span>}
+          {!isCollapsed && locked && <Lock className="w-3.5 h-3.5 shrink-0 text-zinc-400" />}
         </button>
 
         <button

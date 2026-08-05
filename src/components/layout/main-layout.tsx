@@ -11,6 +11,8 @@ import { IdeasView } from '@/components/ideas/ideas-view'
 import { IncomeView } from '@/components/income/income-view'
 import { MetricsView } from '@/components/metrics/metrics-view'
 import { ManagerWidget } from '@/components/coach/manager-widget'
+import { useSubscription } from '@/hooks/use-subscription'
+import { TrialBanner, TrialLockGate } from '@/components/dashboard/trial-lock'
 import { cn } from '@/lib/utils'
 
 function SectionContent({ section }: { section: Section }) {
@@ -35,6 +37,7 @@ export function MainLayout() {
   const [activeSection, setActiveSection] = useState<Section>('dashboard')
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const { locked } = useSubscription()
 
   useEffect(() => {
     setMounted(true)
@@ -62,6 +65,7 @@ export function MainLayout() {
         onSectionChange={setActiveSection}
         isCollapsed={mounted ? isCollapsed : false}
         onToggleCollapse={toggleCollapse}
+        locked={locked}
       />
       <main
         className={cn(
@@ -69,9 +73,10 @@ export function MainLayout() {
           mounted ? (isCollapsed ? 'ml-[60px]' : 'ml-[240px]') : 'ml-[240px]'
         )}
       >
-        <SectionContent section={activeSection} />
+        {locked && <TrialBanner />}
+        {locked ? <TrialLockGate /> : <SectionContent section={activeSection} />}
       </main>
-      <ManagerWidget />
+      {!locked && <ManagerWidget />}
     </div>
   )
 }

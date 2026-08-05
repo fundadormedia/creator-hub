@@ -205,17 +205,16 @@ export default function LandingPage() {
       <section className="px-6 pb-20">
         <div className="mx-auto max-w-5xl overflow-hidden rounded-3xl bg-indigo-950 px-8 py-16 text-center text-white">
           <h2 className="text-4xl font-bold tracking-tight md:text-5xl">
-            Tú al contenido. Del negocio me encargo yo.
+            Tu creatividad merece un manager.
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-lg text-indigo-200">
-            Prueba Creator Hub 7 días gratis y arma tu media kit en minutos. Sin tarjeta.
-          </p>
+          <p className="mx-auto mt-4 max-w-xl text-lg text-indigo-200">Empieza hoy, gratis.</p>
           <Link
             href="/register"
             className="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 text-base font-semibold text-indigo-700 transition hover:bg-indigo-50"
           >
-            Empieza gratis <ArrowRight className="h-4 w-4" />
+            Crear mi cuenta <ArrowRight className="h-4 w-4" />
           </Link>
+          <p className="mt-5 text-sm text-indigo-300">7 días gratis · Sin tarjeta · Cancela cuando quieras</p>
         </div>
       </section>
 

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useUser } from '@/hooks/use-user'
 import { useRouter } from 'next/navigation'
-import { User, Shield, Camera, Sparkles, CreditCard, LifeBuoy, Bell, Loader2, ArrowRight } from 'lucide-react'
+import { User, Shield, Camera, CreditCard, LifeBuoy, Bell, Loader2, ArrowRight } from 'lucide-react'
 
 const NICHES = ['Tecnología', 'Lifestyle', 'Educación', 'Entretenimiento', 'Negocios', 'Salud', 'Moda', 'Viajes', 'Gaming', 'Otro']
 
@@ -588,11 +588,10 @@ function SubscriptionTab() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-type Tab = 'perfil' | 'suscripcion' | 'seguridad'
+type Tab = 'perfil' | 'seguridad'
 
 const tabs: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'perfil',      label: 'Mi Perfil',    icon: User     },
-  { id: 'suscripcion', label: 'Suscripción',  icon: Sparkles },
   { id: 'seguridad',   label: 'Seguridad',    icon: Shield   },
 ]
 
@@ -626,9 +625,15 @@ export default function PerfilPage() {
 
       {/* Content */}
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-8">
-        {activeTab === 'perfil'      && <ProfileTab />}
-        {activeTab === 'suscripcion' && <SubscriptionTab />}
-        {activeTab === 'seguridad'   && <SecurityTab />}
+        {activeTab === 'perfil' && (
+          <div className="space-y-8">
+            <ProfileTab />
+            <div className="border-t border-zinc-200 dark:border-zinc-800 pt-8">
+              <SubscriptionTab />
+            </div>
+          </div>
+        )}
+        {activeTab === 'seguridad' && <SecurityTab />}
       </div>
     </div>
   )

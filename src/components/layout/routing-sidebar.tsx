@@ -20,6 +20,7 @@ import {
   Sun,
   Moon,
   LogOut,
+  Lock,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -59,11 +60,13 @@ const navItems: NavItem[] = [
 interface RoutingSidebarProps {
   isCollapsed: boolean
   onToggleCollapse: () => void
+  /** Cuando la prueba venció: bloquea todo menos Perfil */
+  locked?: boolean
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function RoutingSidebar({ isCollapsed, onToggleCollapse }: RoutingSidebarProps) {
+export function RoutingSidebar({ isCollapsed, onToggleCollapse, locked = false }: RoutingSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { theme, setTheme } = useTheme()
@@ -119,6 +122,7 @@ export function RoutingSidebar({ isCollapsed, onToggleCollapse }: RoutingSidebar
         {navItems.map((item) => {
           const Icon = item.icon
           const active = isActive(item)
+          const itemLocked = locked && item.id !== 'perfil'
 
           const cls = cn(
             'w-full flex items-center rounded-lg text-sm font-medium transition-all duration-150',
@@ -132,6 +136,25 @@ export function RoutingSidebar({ isCollapsed, onToggleCollapse }: RoutingSidebar
             'w-4 h-4 shrink-0',
             active ? 'text-indigo-500 dark:text-indigo-400' : 'text-zinc-500 dark:text-zinc-500'
           )
+
+          // Prueba vencida: item bloqueado (no navega, muestra candado).
+          if (itemLocked) {
+            return (
+              <div
+                key={item.id}
+                title="Suscríbete para desbloquear"
+                className={cn(cls, 'cursor-not-allowed opacity-40')}
+              >
+                <Icon className={iconCls} />
+                {!isCollapsed && (
+                  <>
+                    <span className="whitespace-nowrap flex-1">{item.label}</span>
+                    <Lock className="w-3.5 h-3.5 shrink-0 text-zinc-400" />
+                  </>
+                )}
+              </div>
+            )
+          }
 
           if (item.spaSection) {
             return (

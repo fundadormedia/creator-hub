@@ -1,12 +1,20 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { RoutingSidebar } from '@/components/layout/routing-sidebar'
+import { useSubscription } from '@/hooks/use-subscription'
+import { TrialBanner, TrialLockGate } from '@/components/dashboard/trial-lock'
 import { cn } from '@/lib/utils'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const { locked } = useSubscription()
+  const pathname = usePathname()
+
+  // Perfil siempre accesible (ahí gestionan la suscripción).
+  const onPerfil = pathname?.startsWith('/perfil') ?? false
 
   useEffect(() => {
     setMounted(true)
@@ -25,6 +33,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <RoutingSidebar
         isCollapsed={mounted ? isCollapsed : false}
         onToggleCollapse={toggleCollapse}
+        locked={locked}
       />
       <main
         className={cn(
@@ -32,7 +41,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           mounted ? (isCollapsed ? 'ml-[60px]' : 'ml-[240px]') : 'ml-[240px]'
         )}
       >
-        {children}
+        {locked && <TrialBanner />}
+        {locked && !onPerfil ? <TrialLockGate /> : children}
       </main>
     </div>
   )

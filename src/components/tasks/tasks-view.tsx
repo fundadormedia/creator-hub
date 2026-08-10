@@ -31,6 +31,18 @@ const TYPES: { id: TaskType; label: string; emoji: string; dot: string }[] = [
 
 const typeInfo = (t: TaskType) => TYPES.find((x) => x.id === t) ?? TYPES[TYPES.length - 1]
 
+type TaskStatus = 'por_hacer' | 'en_progreso' | 'hecho'
+
+const STATUSES: { id: TaskStatus; label: string; cls: string }[] = [
+  { id: 'por_hacer', label: 'Por hacer', cls: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300' },
+  { id: 'en_progreso', label: 'En progreso', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300' },
+  { id: 'hecho', label: 'Hecho', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' },
+]
+
+const statusInfo = (s: TaskStatus) => STATUSES.find((x) => x.id === s) ?? STATUSES[0]
+const nextStatus = (s: TaskStatus): TaskStatus =>
+  s === 'por_hacer' ? 'en_progreso' : s === 'en_progreso' ? 'hecho' : 'por_hacer'
+
 interface Task {
   id: string
   title: string
@@ -38,6 +50,7 @@ interface Task {
   due_date: string | null
   notes: string | null
   done: boolean
+  status: TaskStatus
   source: string
 }
 
@@ -152,10 +165,11 @@ export function TasksView() {
     setModalOpen(false)
   }
 
-  async function toggleDone(t: Task) {
-    const done = !t.done
-    await supabase.from('tasks').update({ done }).eq('id', t.id)
-    setTasks((prev) => prev.map((x) => (x.id === t.id ? { ...x, done } : x)))
+  async function cycleStatus(t: Task) {
+    const status = nextStatus(t.status)
+    const done = status === 'hecho'
+    await supabase.from('tasks').update({ status, done }).eq('id', t.id)
+    setTasks((prev) => prev.map((x) => (x.id === t.id ? { ...x, status, done } : x)))
   }
 
   async function handleDelete() {
@@ -238,18 +252,21 @@ export function TasksView() {
                 key={t.id}
                 className="flex items-start gap-3 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
               >
-                <input
-                  type="checkbox"
-                  checked={t.done}
-                  onChange={() => toggleDone(t)}
-                  className="mt-0.5 h-4 w-4 shrink-0 rounded accent-indigo-500"
-                  aria-label={t.done ? 'Marcar como pendiente' : 'Marcar como hecha'}
-                />
+                <button
+                  onClick={() => cycleStatus(t)}
+                  title="Cambiar estado"
+                  className={cn(
+                    'mt-0.5 shrink-0 rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
+                    statusInfo(t.status).cls
+                  )}
+                >
+                  {statusInfo(t.status).label}
+                </button>
                 <div className="min-w-0 flex-1">
                   <p
                     className={cn(
                       'text-sm font-medium',
-                      t.done
+                      t.status === 'hecho'
                         ? 'text-zinc-400 line-through dark:text-zinc-600'
                         : 'text-zinc-900 dark:text-zinc-100'
                     )}

@@ -345,15 +345,27 @@ export function TasksView() {
                 />
               </Field>
 
-              <Field label="Notas (opcional)">
-                <textarea
-                  rows={3}
-                  value={form.notes}
-                  onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
-                  placeholder="Brief, enlaces, contactos, detalles adicionales…"
-                  className={cn(INPUT, 'resize-none')}
-                />
-              </Field>
+              {form.type === 'guion' ? (
+                <Field label="Guión (qué vas a decir)">
+                  <textarea
+                    rows={8}
+                    value={form.notes}
+                    onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
+                    placeholder="Escribe aquí el guión completo: hook, desarrollo y CTA…"
+                    className={cn(INPUT, 'resize-y leading-relaxed')}
+                  />
+                </Field>
+              ) : (
+                <Field label="Notas (opcional)">
+                  <textarea
+                    rows={3}
+                    value={form.notes}
+                    onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
+                    placeholder="Brief, enlaces, contactos, detalles adicionales…"
+                    className={cn(INPUT, 'resize-none')}
+                  />
+                </Field>
+              )}
 
               {error && <p className="text-sm text-red-500">{error}</p>}
             </div>

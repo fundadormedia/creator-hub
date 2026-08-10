@@ -11,16 +11,17 @@ import {
   DialogTitle,
   DialogClose,
 } from '@/components/ui/dialog'
-import { Plus, ListChecks, Trash2, Calendar } from 'lucide-react'
+import { Plus, ListChecks, Trash2, Calendar, Pencil } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const INPUT =
   'w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-colors'
 
-type TaskType = 'grabar' | 'publicar' | 'revisar' | 'evento' | 'cobro' | 'otro'
+type TaskType = 'grabar' | 'publicar' | 'revisar' | 'evento' | 'cobro' | 'guion' | 'otro'
 
 const TYPES: { id: TaskType; label: string; emoji: string; dot: string }[] = [
   { id: 'grabar', label: 'Grabar', emoji: '🎬', dot: 'bg-blue-500' },
+  { id: 'guion', label: 'Guión', emoji: '📜', dot: 'bg-pink-500' },
   { id: 'publicar', label: 'Publicar', emoji: '📤', dot: 'bg-emerald-500' },
   { id: 'revisar', label: 'Revisar', emoji: '📝', dot: 'bg-amber-500' },
   { id: 'evento', label: 'Evento', emoji: '🎤', dot: 'bg-purple-500' },
@@ -28,7 +29,7 @@ const TYPES: { id: TaskType; label: string; emoji: string; dot: string }[] = [
   { id: 'otro', label: 'Otro', emoji: '📋', dot: 'bg-zinc-400' },
 ]
 
-const typeInfo = (t: TaskType) => TYPES.find((x) => x.id === t) ?? TYPES[5]
+const typeInfo = (t: TaskType) => TYPES.find((x) => x.id === t) ?? TYPES[TYPES.length - 1]
 
 interface Task {
   id: string
@@ -70,6 +71,7 @@ export function TasksView() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState({
     title: '',
     type: 'otro' as TaskType,
@@ -90,7 +92,20 @@ export function TasksView() {
   }, [])
 
   function openNew() {
+    setEditingId(null)
     setForm({ title: '', type: 'otro', due_date: '', notes: '' })
+    setError(null)
+    setModalOpen(true)
+  }
+
+  function openEdit(t: Task) {
+    setEditingId(t.id)
+    setForm({
+      title: t.title,
+      type: t.type,
+      due_date: t.due_date ?? '',
+      notes: t.notes ?? '',
+    })
     setError(null)
     setModalOpen(true)
   }
@@ -102,17 +117,32 @@ export function TasksView() {
     }
     setSaving(true)
     setError(null)
-    const { data, error: err } = await supabase
-      .from('tasks')
-      .insert({
-        title: form.title.trim(),
-        type: form.type,
-        due_date: form.due_date || null,
-        notes: form.notes.trim() || null,
-      })
-      .select()
-      .single()
 
+    const payload = {
+      title: form.title.trim(),
+      type: form.type,
+      due_date: form.due_date || null,
+      notes: form.notes.trim() || null,
+    }
+
+    if (editingId) {
+      const { data, error: err } = await supabase
+        .from('tasks')
+        .update(payload)
+        .eq('id', editingId)
+        .select()
+        .single()
+      setSaving(false)
+      if (err || !data) {
+        setError(err?.message ?? 'No se pudo guardar la tarea.')
+        return
+      }
+      setTasks((prev) => prev.map((t) => (t.id === editingId ? (data as Task) : t)))
+      setModalOpen(false)
+      return
+    }
+
+    const { data, error: err } = await supabase.from('tasks').insert(payload).select().single()
     setSaving(false)
     if (err || !data) {
       setError(err?.message ?? 'No se pudo crear la tarea.')
@@ -240,13 +270,22 @@ export function TasksView() {
                   </div>
                   {t.notes && <p className="mt-1.5 text-sm text-zinc-500">{t.notes}</p>}
                 </div>
-                <button
-                  onClick={() => setDeletingId(t.id)}
-                  className="shrink-0 text-zinc-400 transition-colors hover:text-red-500"
-                  aria-label="Eliminar tarea"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                <div className="flex shrink-0 items-center gap-1">
+                  <button
+                    onClick={() => openEdit(t)}
+                    className="text-zinc-400 transition-colors hover:text-indigo-500"
+                    aria-label="Editar tarea"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setDeletingId(t.id)}
+                    className="text-zinc-400 transition-colors hover:text-red-500"
+                    aria-label="Eliminar tarea"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             )
           })}
@@ -256,12 +295,14 @@ export function TasksView() {
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nueva tarea</DialogTitle>
+            <DialogTitle>{editingId ? 'Editar tarea' : 'Nueva tarea'}</DialogTitle>
             <DialogClose />
           </DialogHeader>
           <DialogBody>
             <p className="mb-5 -mt-2 text-sm text-zinc-500">
-              Agrega una tarea manual con su fecha, hora y notas.
+              {editingId
+                ? 'Actualiza el título, tipo, fecha o notas.'
+                : 'Agrega una tarea manual con su fecha, hora y notas.'}
             </p>
             <div className="space-y-5">
               <Field label="Título">
@@ -323,7 +364,7 @@ export function TasksView() {
               disabled={saving}
               className="w-full rounded-lg bg-indigo-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-600 disabled:opacity-50"
             >
-              {saving ? 'Creando…' : 'Crear tarea'}
+              {saving ? 'Guardando…' : editingId ? 'Guardar cambios' : 'Crear tarea'}
             </button>
           </DialogFooter>
         </DialogContent>

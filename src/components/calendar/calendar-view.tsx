@@ -52,6 +52,24 @@ function toDateString(year: number, month: number, day: number): string {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
 
+// Tareas en el calendario (solo las que tienen fecha).
+interface CalTask {
+  id: string
+  title: string
+  type: string
+  due_date: string | null
+}
+
+const TASK_EMOJI: Record<string, string> = {
+  grabar: '🎬',
+  guion: '📜',
+  publicar: '📤',
+  revisar: '📝',
+  evento: '🎤',
+  cobro: '💰',
+  otro: '📋',
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function CalendarView() {
@@ -61,6 +79,7 @@ export function CalendarView() {
     new Date(today.getFullYear(), today.getMonth(), 1)
   )
   const [content, setContent] = useState<Content[]>([])
+  const [tasks, setTasks] = useState<CalTask[]>([])
   const [loading, setLoading] = useState(true)
 
   // Modal state
@@ -83,6 +102,14 @@ export function CalendarView() {
         if (data) setContent(data as Content[])
         setLoading(false)
       })
+    // Tareas con fecha → también salen en el calendario.
+    supabase
+      .from('tasks')
+      .select('id, title, type, due_date')
+      .not('due_date', 'is', null)
+      .then(({ data }) => {
+        if (data) setTasks(data as CalTask[])
+      })
   }, [])
 
   // ── Derived data ────────────────────────────────────────────────────────────
@@ -97,6 +124,15 @@ export function CalendarView() {
     const { day } = parseDate(item.date)
     if (!contentByDay[day]) contentByDay[day] = []
     contentByDay[day].push(item)
+  })
+
+  const tasksByDay: Record<number, CalTask[]> = {}
+  tasks.forEach((t) => {
+    if (!t.due_date) return
+    const d = parseDate(t.due_date)
+    if (d.year !== year || d.month !== month) return
+    if (!tasksByDay[d.day]) tasksByDay[d.day] = []
+    tasksByDay[d.day].push(t)
   })
 
   const firstDayOfWeek = new Date(year, month, 1).getDay()
@@ -224,6 +260,7 @@ export function CalendarView() {
           <div className="grid grid-cols-7">
             {calendarCells.map((day, idx) => {
               const dayItems = day ? (contentByDay[day] ?? []) : []
+              const dayTasks = day ? (tasksByDay[day] ?? []) : []
               const today_ = day !== null && isToday(day)
               const dateStr = day !== null ? toDateString(year, month, day) : ''
 
@@ -272,6 +309,15 @@ export function CalendarView() {
                             />
                             <span className="truncate">{item.title}</span>
                           </button>
+                        ))}
+                        {dayTasks.map((t) => (
+                          <div
+                            key={t.id}
+                            className="flex items-center gap-1 rounded bg-indigo-50 px-1 py-0.5 text-[10px] text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300"
+                          >
+                            <span className="shrink-0">{TASK_EMOJI[t.type] ?? '📋'}</span>
+                            <span className="truncate">{t.title}</span>
+                          </div>
                         ))}
                       </div>
                     </>

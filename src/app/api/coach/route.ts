@@ -40,7 +40,7 @@ type RouteClient = Awaited<ReturnType<typeof createRouteClient>>
 
 // Trae los datos del usuario. RLS limita todo a sus propias filas.
 async function buildUserContext(supabase: RouteClient): Promise<string> {
-  const [profile, content, income, brands, expenses] = await Promise.all([
+  const [profile, content, income, collabs, expenses] = await Promise.all([
     supabase.from('profiles').select('manager_profile, pricing_stance, main_currency').maybeSingle(),
     supabase
       .from('content')
@@ -48,7 +48,11 @@ async function buildUserContext(supabase: RouteClient): Promise<string> {
       .order('date', { ascending: false })
       .limit(40),
     supabase.from('income').select('month, year, amount, source').order('year', { ascending: false }).limit(36),
-    supabase.from('brands').select('name, platform, amount, status, delivery_date').limit(40),
+    supabase
+      .from('collaborations')
+      .select('brand_name, total_amount, currency, status, close_month, payment_terms_days, is_barter')
+      .order('created_at', { ascending: false })
+      .limit(40),
     supabase.from('expenses').select('category, amount, month, year, description').limit(60),
   ])
 
@@ -66,7 +70,7 @@ async function buildUserContext(supabase: RouteClient): Promise<string> {
     quienEs,
     section('Contenido publicado (más reciente primero)', content.data),
     section('Ingresos por mes', income.data),
-    section('Colaboraciones con marcas', brands.data),
+    section('Colaboraciones con marcas', collabs.data),
     section('Gastos', expenses.data),
   ].join('\n\n')
 }

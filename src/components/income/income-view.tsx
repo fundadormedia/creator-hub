@@ -13,7 +13,7 @@ import {
 } from 'recharts'
 import { useTheme } from 'next-themes'
 import { supabase, transformIncomeToChart } from '@/lib/supabase'
-import type { Income, Brand, IncomeChartData } from '@/lib/supabase'
+import type { Income, Collaboration, IncomeChartData } from '@/lib/supabase'
 import {
   Dialog,
   DialogContent,
@@ -43,15 +43,32 @@ const SOURCE_STYLES: Record<Income['source'], string> = {
   affiliate: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20',
 }
 
+const ACTIVE_STYLE = 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+const DONE_STYLE = 'bg-zinc-200/80 dark:bg-zinc-700/50 text-zinc-600 dark:text-zinc-400 border border-zinc-300/60 dark:border-zinc-600/30'
 const dealStatusStyles: Record<string, string> = {
-  activo: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
+  // Estados de collaborations (nuevos) + brands (viejos) por compatibilidad.
+  activa: ACTIVE_STYLE,
+  activo: ACTIVE_STYLE,
   pendiente: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20',
-  completado: 'bg-zinc-200/80 dark:bg-zinc-700/50 text-zinc-600 dark:text-zinc-400 border border-zinc-300/60 dark:border-zinc-600/30',
+  completada: DONE_STYLE,
+  completado: DONE_STYLE,
 }
 const dealStatusLabels: Record<string, string> = {
+  activa: 'Activa',
   activo: 'Activo',
   pendiente: 'Pendiente',
+  completada: 'Completada',
   completado: 'Completado',
+}
+
+// Fila de "Acuerdos de marca" mapeada desde la tabla collaborations.
+interface BrandDealRow {
+  id: string
+  name: string
+  amount: number
+  status: string
+  delivery: string
+  platform: string
 }
 
 const INPUT =
@@ -83,7 +100,7 @@ export function IncomeView({ embedded = false }: { embedded?: boolean } = {}) {
 
   const [incomeRecords, setIncomeRecords] = useState<Income[]>([])
   const [chartData, setChartData] = useState<IncomeChartData[]>([])
-  const [brands, setBrands] = useState<Brand[]>([])
+  const [brands, setBrands] = useState<BrandDealRow[]>([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<Income | null>(null)
@@ -95,14 +112,25 @@ export function IncomeView({ embedded = false }: { embedded?: boolean } = {}) {
   useEffect(() => {
     Promise.all([
       supabase.from('income').select('*'),
-      supabase.from('brands').select('*').order('delivery_date', { ascending: true }),
-    ]).then(([incomeRes, brandsRes]) => {
+      // Acuerdos de marca = colaboraciones (tabla nueva, la que se llena en Colaboraciones).
+      supabase.from('collaborations').select('*').order('created_at', { ascending: false }),
+    ]).then(([incomeRes, collabRes]) => {
       if (incomeRes.data) {
         const records = incomeRes.data as Income[]
         setIncomeRecords(records)
         setChartData(transformIncomeToChart(records))
       }
-      if (brandsRes.data) setBrands(brandsRes.data as Brand[])
+      if (collabRes.data) {
+        const rows: BrandDealRow[] = (collabRes.data as Collaboration[]).map((c) => ({
+          id: c.id,
+          name: c.brand_name,
+          amount: c.total_amount,
+          status: c.status,
+          delivery: c.close_month || '—',
+          platform: '—',
+        }))
+        setBrands(rows)
+      }
       setLoading(false)
     })
   }, [])
@@ -322,7 +350,7 @@ export function IncomeView({ embedded = false }: { embedded?: boolean } = {}) {
                       {dealStatusLabels[deal.status]}
                     </span>
                   </td>
-                  <td className="px-6 py-3 text-zinc-500 dark:text-zinc-400">{deal.delivery_date}</td>
+                  <td className="px-6 py-3 text-zinc-500 dark:text-zinc-400">{deal.delivery}</td>
                   <td className="px-6 py-3 text-zinc-500 dark:text-zinc-400">{deal.platform}</td>
                 </tr>
               ))}

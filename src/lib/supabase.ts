@@ -22,12 +22,16 @@ export interface Content {
   is_sponsor: boolean
 }
 
+export type IdeaStatus = 'idea' | 'en_progreso' | 'hecho'
+
 export interface Idea {
   id: string
   title: string
   description: string
   platform: Platform
   priority: Priority
+  category?: string | null
+  status?: IdeaStatus
   created_at: string
 }
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import type { Idea, Platform, Priority } from '@/lib/supabase'
+import type { Idea, Platform, Priority, IdeaStatus } from '@/lib/supabase'
 import { PlatformBadge } from '@/components/content/platform-badge'
 import {
   Dialog,
@@ -39,13 +39,29 @@ const prioridadStyles: Record<Priority, string> = {
   Baja: 'bg-zinc-200/80 dark:bg-zinc-700/50 text-zinc-600 dark:text-zinc-400 border border-zinc-300/60 dark:border-zinc-600/30',
 }
 
-type IdeaForm = { title: string; description: string; platform: Platform; priority: Priority }
+// Estado tipo kanban (como en la base de Notion): Idea → En progreso → Hecho.
+const IDEA_STATUSES: { id: IdeaStatus; label: string; cls: string }[] = [
+  { id: 'idea', label: 'Idea', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300' },
+  { id: 'en_progreso', label: 'En progreso', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300' },
+  { id: 'hecho', label: 'Hecho', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' },
+]
+const ideaStatusInfo = (s?: IdeaStatus) => IDEA_STATUSES.find((x) => x.id === (s ?? 'idea')) ?? IDEA_STATUSES[0]
+const nextIdeaStatus = (s?: IdeaStatus): IdeaStatus => {
+  const cur = s ?? 'idea'
+  return cur === 'idea' ? 'en_progreso' : cur === 'en_progreso' ? 'hecho' : 'idea'
+}
+
+// Sugerencias de categoría (editables — el usuario puede escribir la suya).
+const SUGGESTED_CATEGORIES = ['Business', 'Marca Personal', 'Personal', 'Travel', 'Hobbies', 'Home', 'One-day']
+
+type IdeaForm = { title: string; description: string; platform: Platform; priority: Priority; category: string }
 
 const defaultForm = (): IdeaForm => ({
   title: '',
   description: '',
   platform: 'YouTube',
   priority: 'Media',
+  category: '',
 })
 
 export function IdeasView() {
@@ -77,12 +93,24 @@ export function IdeasView() {
 
   function openEdit(idea: Idea) {
     setEditingItem(idea)
-    setForm({ title: idea.title, description: idea.description, platform: idea.platform, priority: idea.priority })
+    setForm({
+      title: idea.title,
+      description: idea.description,
+      platform: idea.platform,
+      priority: idea.priority,
+      category: idea.category ?? '',
+    })
     setModalOpen(true)
   }
 
   const set = <K extends keyof IdeaForm>(k: K, v: IdeaForm[K]) =>
     setForm((p) => ({ ...p, [k]: v }))
+
+  async function cycleStatus(idea: Idea) {
+    const status = nextIdeaStatus(idea.status)
+    await supabase.from('ideas').update({ status }).eq('id', idea.id)
+    setIdeas((prev) => prev.map((i) => (i.id === idea.id ? { ...i, status } : i)))
+  }
 
   async function handleSave() {
     if (!form.title.trim()) return
@@ -151,6 +179,16 @@ export function IdeasView() {
                 <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 leading-snug flex-1">
                   {idea.title}
                 </h3>
+                <button
+                  onClick={() => cycleStatus(idea)}
+                  title="Cambiar estado"
+                  className={cn(
+                    'shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition-colors',
+                    ideaStatusInfo(idea.status).cls
+                  )}
+                >
+                  {ideaStatusInfo(idea.status).label}
+                </button>
               </div>
 
               <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4 leading-relaxed">
@@ -158,7 +196,12 @@ export function IdeasView() {
               </p>
 
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {idea.category && (
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                      {idea.category}
+                    </span>
+                  )}
                   <PlatformBadge platform={idea.platform} />
                   <span
                     className={cn(
@@ -218,6 +261,20 @@ export function IdeasView() {
                 onChange={(e) => set('description', e.target.value)}
                 placeholder="Describe la idea..."
               />
+            </Field>
+            <Field label="Categoría">
+              <input
+                className={INPUT}
+                list="idea-categories"
+                value={form.category}
+                onChange={(e) => set('category', e.target.value)}
+                placeholder="Business, Marca Personal… o escribe la tuya"
+              />
+              <datalist id="idea-categories">
+                {SUGGESTED_CATEGORIES.map((c) => (
+                  <option key={c} value={c} />
+                ))}
+              </datalist>
             </Field>
             <div className="grid grid-cols-2 gap-4">
               <Field label="Plataforma">
